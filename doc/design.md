@@ -79,9 +79,9 @@ v1.0 采用纯本地 Web App 形态，不引入后端服务。
 
 技术选择：
 
+- 应用框架：Next.js。
 - 前端框架：React。
 - 开发语言：TypeScript。
-- 构建工具：Vite。
 - 本地数据：IndexedDB。
 - IndexedDB 封装：Dexie。
 - 界面语言：简体中文。
@@ -89,10 +89,10 @@ v1.0 采用纯本地 Web App 形态，不引入后端服务。
 - 运行目标：先只保证项目作者当前这台 Mac 本地可用。
 - 导出格式：JSON 和 Markdown。
 
-选择 React + TypeScript + Vite 的原因：
+选择 Next.js + React + TypeScript 的原因：
 
-- v1.0 不需要服务端渲染、云端接口或账号系统。
-- Vite 更适合快速搭建纯前端本地应用。
+- Next.js 适合作为开源 Web App 的应用骨架，便于组织页面、路由、构建和后续扩展。
+- v1.0 仅将 Next.js 作为本地 Web App 框架使用，不使用服务端能力保存、上传或分析用户个人数据。
 - React 生态成熟，适合开源协作和后续复杂 UI 演进。
 - TypeScript 有利于维护模块边界和数据模型。
 
@@ -991,7 +991,7 @@ v1.0 关键验收测试：
 
 以下事项已经确认，并作为 v1.0 实现约束：
 
-1. v1.0 使用 React + TypeScript + Vite。
+1. v1.0 使用 Next.js + React + TypeScript。
 2. 本地持久化使用 IndexedDB + Dexie。
 3. Git 仓库等剩余设计问题确认后再初始化，且初始化任务由另一个聊天窗口处理。
 4. v1.0 界面语言使用简体中文。
