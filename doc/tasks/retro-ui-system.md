@@ -20,20 +20,20 @@
 
 ## Checklist
 
-- [ ] 定义基础颜色 token
-- [ ] 定义基础字体和字号规则
-- [ ] 定义窗口边框和阴影风格
-- [ ] 实现 StartupScreen 组件
-- [ ] 实现 WindowFrame 组件
-- [ ] 实现 Panel 组件
-- [ ] 实现 Button 组件
-- [ ] 实现 MultiSelectOptionGroup 组件
-- [ ] 实现 Dialog 组件
-- [ ] 实现 StatusLabel 组件
-- [ ] 实现 SourceReference 组件
-- [ ] MultiSelectOptionGroup 支持 min/max props
-- [ ] Dialog 可用于重置确认
-- [ ] 确保组件不包含 LifeOS 业务逻辑
-- [ ] 确保视觉不偏未来科技感
-- [ ] 确保视觉不偏现代金融后台
-- [ ] 为核心组件补充渲染测试
+- [x] 定义基础颜色 token
+- [x] 定义基础字体和字号规则
+- [x] 定义窗口边框和阴影风格
+- [x] 实现 StartupScreen 组件
+- [x] 实现 WindowFrame 组件
+- [x] 实现 Panel 组件
+- [x] 实现 Button 组件
+- [x] 实现 MultiSelectOptionGroup 组件
+- [x] 实现 Dialog 组件
+- [x] 实现 StatusLabel 组件
+- [x] 实现 SourceReference 组件
+- [x] MultiSelectOptionGroup 支持 min/max props
+- [x] Dialog 可用于重置确认
+- [x] 确保组件不包含 LifeOS 业务逻辑
+- [x] 确保视觉不偏未来科技感
+- [x] 确保视觉不偏现代金融后台
+- [x] 为核心组件补充渲染测试

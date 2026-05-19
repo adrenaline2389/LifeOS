@@ -1,0 +1,71 @@
+:root {
+  --lifeos-ink: #161616;
+  --lifeos-paper: #f2f0e7;
+  --lifeos-panel: #fffdf2;
+  --lifeos-shadow: #3a3a3a;
+  --lifeos-gray-1: #d8d5ca;
+  --lifeos-gray-2: #aaa69b;
+  --lifeos-gray-3: #6d695f;
+  --lifeos-blue: #234f9c;
+  --lifeos-green: #2f6f4e;
+  --lifeos-red: #9b2f2f;
+  --lifeos-font-ui: "Chicago", "Geneva", "Tahoma", system-ui, sans-serif;
+  --lifeos-font-mono: "Monaco", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--lifeos-ink);
+  background:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.035) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.035) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.035) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.035) 75%),
+    var(--lifeos-paper);
+  background-position:
+    0 0,
+    0 6px,
+    6px -6px,
+    -6px 0;
+  background-size: 12px 12px;
+  font-family: var(--lifeos-font-ui);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  color: #fff;
+  background: var(--lifeos-blue);
+}
+
+.lifeos-screen {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+@media (max-width: 700px) {
+  .lifeos-screen {
+    padding: 12px;
+  }
+}

@@ -20,21 +20,21 @@
 
 ## Checklist
 
-- [ ] 定义 ManualProfile 类型
-- [ ] 定义 IdentifiedParameter 类型
-- [ ] 定义 PendingObservation 类型
-- [ ] 定义 ManualSection 类型
-- [ ] 生成 `selfClarity: "hazy"`
-- [ ] 根据 write targets 生成已识别参数
-- [ ] 根据回答组合生成待验证观察
-- [ ] 为每条待验证观察附加来源回答引用
-- [ ] 调用子系统推荐模块生成最多 2 个推荐
-- [ ] 将第 9 题写入 `futureSelfNote`
-- [ ] 生成可编辑说明书章节
-- [ ] 将生成章节标记为 `source: "generated"`
-- [ ] 确保生成逻辑确定性
-- [ ] 确保不调用 AI 服务
-- [ ] 确保不生成诊断标签
-- [ ] 为生成结果结构补充测试
-- [ ] 为来源引用补充测试
+- [x] 定义 ManualProfile 类型
+- [x] 定义 IdentifiedParameter 类型
+- [x] 定义 PendingObservation 类型
+- [x] 定义 ManualSection 类型
+- [x] 生成 `selfClarity: "hazy"`
+- [x] 根据 write targets 生成已识别参数
+- [x] 根据回答组合生成待验证观察
+- [x] 为每条待验证观察附加来源回答引用
+- [x] 调用子系统推荐模块生成最多 2 个推荐
+- [x] 将第 9 题写入 `futureSelfNote`
+- [x] 生成可编辑说明书章节
+- [x] 将生成章节标记为 `source: "generated"`
+- [x] 确保生成逻辑确定性
+- [x] 确保不调用 AI 服务
+- [x] 确保不生成诊断标签
+- [x] 为生成结果结构补充测试
+- [x] 为来源引用补充测试
 

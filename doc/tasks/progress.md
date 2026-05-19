@@ -2,15 +2,15 @@
 
 ## 总体进度
 
-- [ ] App Shell 模块：`doc/tasks/app-shell.md`
-- [ ] Onboarding 模块：`doc/tasks/onboarding.md`
-- [ ] 问题 Schema 模块：`doc/tasks/question-schema.md`
-- [ ] 本地数据模块：`doc/tasks/local-data.md`
-- [ ] 个人说明书生成模块：`doc/tasks/manual-generation.md`
-- [ ] 个人说明书面板模块：`doc/tasks/manual-panel.md`
-- [ ] 子系统推荐模块：`doc/tasks/subsystem-recommendation.md`
-- [ ] 导出与重置模块：`doc/tasks/export-reset.md`
-- [ ] 复古 UI 系统模块：`doc/tasks/retro-ui-system.md`
+- [x] App Shell 模块：`doc/tasks/app-shell.md`
+- [x] Onboarding 模块：`doc/tasks/onboarding.md`
+- [x] 问题 Schema 模块：`doc/tasks/question-schema.md`
+- [x] 本地数据模块：`doc/tasks/local-data.md`
+- [x] 个人说明书生成模块：`doc/tasks/manual-generation.md`
+- [x] 个人说明书面板模块：`doc/tasks/manual-panel.md`
+- [x] 子系统推荐模块：`doc/tasks/subsystem-recommendation.md`
+- [x] 导出与重置模块：`doc/tasks/export-reset.md`
+- [x] 复古 UI 系统模块：`doc/tasks/retro-ui-system.md`
 
 ## 完成标准
 

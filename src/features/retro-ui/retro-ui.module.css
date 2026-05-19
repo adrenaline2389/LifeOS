@@ -1,0 +1,611 @@
+.startupScreen,
+.windowFrame,
+.panel,
+.button,
+.multiSelect,
+.dialog,
+.statusLabel,
+.sourceReference {
+  box-sizing: border-box;
+  color: #111111;
+  font-family: var(
+    --lifeos-retro-font,
+    Chicago,
+    Geneva,
+    Monaco,
+    "Courier New",
+    monospace
+  );
+  letter-spacing: 0;
+}
+
+.startupScreen {
+  align-items: center;
+  background:
+    linear-gradient(#f7f7f0 0 0) padding-box,
+    repeating-linear-gradient(
+      0deg,
+      #d2d2c8 0,
+      #d2d2c8 2px,
+      #b9b9ae 2px,
+      #b9b9ae 4px
+    );
+  border: 2px solid #111111;
+  box-shadow: 6px 6px 0 #000000;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  image-rendering: pixelated;
+  justify-content: center;
+  min-height: 20rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.startupGlyph {
+  background: #f7f7f0;
+  border: 2px solid #111111;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #8a8a82;
+  height: 4.25rem;
+  margin-top: 0.5rem;
+  position: relative;
+  width: 4.25rem;
+}
+
+.startupGlyphButton {
+  cursor: pointer;
+  padding: 0;
+}
+
+.startupGlyphButton:hover {
+  background: #ffffff;
+}
+
+.startupGlyphButton:active {
+  box-shadow: inset 2px 2px 0 #8a8a82, inset -2px -2px 0 #ffffff;
+  transform: translate(2px, 2px);
+}
+
+.startupGlyphButton:focus-visible {
+  outline: 2px dotted #111111;
+  outline-offset: 4px;
+}
+
+.startupGlyph::before,
+.startupGlyph::after {
+  background: #111111;
+  content: "";
+  position: absolute;
+}
+
+.startupGlyph::before {
+  height: 2rem;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+}
+
+.startupGlyph::after {
+  height: 2px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2rem;
+}
+
+.startupTitle {
+  font-size: 1.5rem;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.startupStatus,
+.startupSubtitle {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.windowFrame,
+.dialog {
+  background: #efecdf;
+  border: 3px solid #111111;
+  box-shadow:
+    7px 7px 0 #1d1d1d,
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #777777;
+}
+
+.titleBar {
+  align-items: center;
+  background: repeating-linear-gradient(
+    0deg,
+    #f8f7ef 0,
+    #f8f7ef 3px,
+    #8f95a8 3px,
+    #8f95a8 5px,
+    #ffffff 5px,
+    #ffffff 7px,
+    #111111 7px,
+    #111111 8px
+  );
+  border-bottom: 3px solid #111111;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  min-height: 6.25rem;
+  padding: 0.75rem 1.625rem;
+  position: relative;
+}
+
+.titleControls {
+  align-items: center;
+  display: flex;
+  gap: 0.625rem;
+  left: 1.625rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.titleControl {
+  background: #e95a4e;
+  border: 3px solid #111111;
+  box-shadow:
+    inset 3px 3px 0 rgba(255, 255, 255, 0.75),
+    inset -3px -3px 0 rgba(0, 0, 0, 0.28),
+    2px 2px 0 #ffffff;
+  display: inline-block;
+  height: 2rem;
+  width: 2rem;
+}
+
+.titleControl:nth-child(2) {
+  background: #f4c529;
+}
+
+.titleControl:nth-child(3) {
+  background: #7cb51d;
+}
+
+.titleText {
+  background: linear-gradient(90deg, #e8e4d8, #f8f5eb 48%, #e0ddd1);
+  border: 3px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #b2aa9b;
+  font-size: clamp(1.75rem, 4vw, 2.85rem);
+  grid-column: 2;
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin: 0;
+  justify-self: center;
+  max-width: min(80vw, 36rem);
+  overflow: hidden;
+  padding: 0.6rem 2.4rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windowActions {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+  grid-column: 3;
+  justify-content: flex-end;
+  justify-self: end;
+  position: relative;
+  z-index: 1;
+}
+
+.windowBody {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.85), transparent 30%),
+    radial-gradient(circle at 75% 70%, rgba(190, 184, 160, 0.25), transparent 36%),
+    #f3f0e4;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #777777;
+  padding: clamp(2rem, 5vw, 4rem);
+}
+
+.windowStatusBar {
+  align-items: center;
+  background: linear-gradient(180deg, #d6d6ed, #bfc0db);
+  border-top: 3px solid #111111;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 700;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.625rem 1.5rem;
+}
+
+.macFace {
+  background: #fffdf2;
+  border: 2px solid #777777;
+  box-sizing: content-box;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #9a936b;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 30px;
+  image-rendering: pixelated;
+  position: relative;
+  width: 30px;
+}
+
+.macFace span {
+  background: #4a4a4a;
+  display: block;
+  position: absolute;
+}
+
+.macFaceEyeLeft {
+  height: 8px;
+  left: 6px;
+  top: 5px;
+  width: 3px;
+}
+
+.macFaceEyeRight {
+  height: 8px;
+  right: 6px;
+  top: 5px;
+  width: 3px;
+}
+
+.macFaceNose {
+  height: 13px;
+  left: 15px;
+  top: 6px;
+  width: 3px;
+}
+
+.macFaceNoseFoot {
+  height: 3px;
+  left: 12px;
+  top: 17px;
+  width: 6px;
+}
+
+.macFaceMouthLeft {
+  height: 4px;
+  left: 6px;
+  top: 22px;
+  width: 4px;
+}
+
+.macFaceMouthRight {
+  height: 4px;
+  right: 6px;
+  top: 22px;
+  width: 4px;
+}
+
+.macFaceMouth {
+  height: 3px;
+  left: 10px;
+  top: 26px;
+  width: 12px;
+}
+
+.windowStatusText {
+  line-height: 1.25;
+}
+
+@media (max-width: 640px) {
+  .titleBar {
+    min-height: 5.5rem;
+    padding: 0.75rem;
+  }
+
+  .titleControls {
+    gap: 0.35rem;
+    left: 0.75rem;
+  }
+
+  .titleControl {
+    border-width: 2px;
+    height: 1.35rem;
+    width: 1.35rem;
+  }
+
+  .titleText {
+    font-size: 1.35rem;
+    max-width: min(58vw, 22rem);
+    padding: 0.35rem 0.65rem;
+  }
+
+  .windowBody {
+    padding: 1.75rem;
+  }
+}
+
+.panel {
+  background: #f7f7f0;
+  border: 2px solid #111111;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #8a8a82;
+  padding: 1rem;
+}
+
+.panelInset {
+  background: #eeeee7;
+  box-shadow: inset 2px 2px 0 #8a8a82, inset -2px -2px 0 #ffffff;
+}
+
+.panelTitle {
+  font-size: 1rem;
+  line-height: 1.25;
+  margin: 0 0 0.75rem;
+}
+
+.button {
+  align-items: center;
+  background: linear-gradient(180deg, #f4f3ff 0%, #c4c1dd 45%, #9a98b4 100%);
+  border: 2px solid #111111;
+  box-shadow:
+    4px 4px 0 #1c1c1c,
+    inset 4px 4px 0 rgba(255, 255, 255, 0.7),
+    inset -4px -4px 0 rgba(51, 48, 84, 0.4);
+  color: #111111;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 1.05rem;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 3rem;
+  min-width: 2rem;
+  padding: 0.55rem 1.3rem;
+  text-align: center;
+}
+
+.button:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.button:active:not(:disabled),
+.button[aria-pressed="true"] {
+  box-shadow: inset 2px 2px 0 #8a8a82, inset -1px -1px 0 #ffffff;
+  transform: translate(2px, 2px);
+}
+
+.button:focus-visible,
+.optionButton:focus-visible {
+  outline: 2px dotted #111111;
+  outline-offset: 3px;
+}
+
+.button:disabled,
+.optionButton:disabled {
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.buttonPrimary {
+  background: #dbe9f5;
+}
+
+.buttonDanger {
+  background: #f3d2d2;
+}
+
+.buttonQuiet {
+  background: #deded6;
+  box-shadow: none;
+}
+
+.buttonSmall {
+  font-size: 0.75rem;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.buttonLarge {
+  font-size: 1rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.multiSelect {
+  border: 2px solid #111111;
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #8a8a82;
+  padding: 0.75rem;
+}
+
+.multiSelectHeader {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.multiSelectLabel {
+  font-weight: 700;
+}
+
+.multiSelectCount {
+  color: #666666;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.multiSelectHelper {
+  color: #666666;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin: -0.25rem 0 0.75rem;
+}
+
+.optionList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.optionButton {
+  align-items: center;
+  background: #f7f7f0;
+  border: 2px solid #111111;
+  color: #111111;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.5rem;
+  line-height: 1.3;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  width: 100%;
+}
+
+.optionButton[aria-pressed="true"] {
+  background: #dbe9f5;
+  box-shadow: inset 2px 2px 0 #8a8a82, inset -1px -1px 0 #ffffff;
+}
+
+.optionMark {
+  border: 2px solid #111111;
+  flex: 0 0 auto;
+  height: 0.875rem;
+  position: relative;
+  width: 0.875rem;
+}
+
+.optionButton[aria-pressed="true"] .optionMark::after {
+  background: #111111;
+  content: "";
+  height: 0.375rem;
+  left: 0.125rem;
+  position: absolute;
+  top: 0.125rem;
+  width: 0.375rem;
+}
+
+.optionText {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.optionDescription {
+  color: #666666;
+  font-size: 0.75rem;
+}
+
+.dialogOverlay {
+  align-items: center;
+  background: rgb(17 17 17 / 35%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 50;
+}
+
+.dialog {
+  max-width: 28rem;
+  width: min(100%, 28rem);
+}
+
+.dialogBody {
+  background: #f7f7f0;
+  line-height: 1.5;
+  padding: 1rem;
+}
+
+.dialogActions {
+  align-items: center;
+  border-top: 2px solid #111111;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+}
+
+.statusLabel {
+  align-items: center;
+  border: 1px solid #111111;
+  display: inline-flex;
+  font-size: 0.75rem;
+  line-height: 1;
+  min-height: 1.375rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.statusNeutral {
+  background: #eeeee7;
+}
+
+.statusPending {
+  background: #fff2a8;
+}
+
+.statusOk {
+  background: #d5ead1;
+}
+
+.statusWarning {
+  background: #f2ddaa;
+}
+
+.statusDanger {
+  background: #f3d2d2;
+}
+
+.sourceReference {
+  border-left: 2px solid #111111;
+  margin-top: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.sourceTitle {
+  color: #666666;
+  font-size: 0.75rem;
+  margin: 0 0 0.375rem;
+}
+
+.sourceList {
+  display: grid;
+  gap: 0.25rem;
+  list-style: square;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.sourceItem {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.sourceDetail {
+  color: #666666;
+  display: block;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 520px) {
+  .startupScreen {
+    min-height: 16rem;
+    padding: 1.25rem;
+  }
+
+  .titleBar {
+    grid-template-columns: 1fr auto 1fr;
+    padding: 0.75rem;
+  }
+
+  .titleText {
+    max-width: min(58vw, 22rem);
+  }
+
+  .dialogActions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .dialogActions .button {
+    width: 100%;
+  }
+}
