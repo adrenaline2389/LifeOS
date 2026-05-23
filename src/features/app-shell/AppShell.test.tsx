@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type {
-  ManualProfile,
   OnboardingAnswerRecord,
+  StartupScanProfile,
 } from "@/types/lifeos";
 
 import { AppShell, type AppShellDataAdapter } from "./AppShell";
@@ -20,7 +20,7 @@ const completedAnswer: OnboardingAnswerRecord = {
     {
       questionId: "q2-recovery-method",
       type: "multi-select",
-      selectedOptionIds: ["q2-walk"],
+      selectedOptionIds: ["q2-sleep"],
     },
     {
       questionId: "q3-action-rhythm",
@@ -45,12 +45,12 @@ const completedAnswer: OnboardingAnswerRecord = {
     {
       questionId: "q7-current-improvement-area",
       type: "multi-select",
-      selectedOptionIds: ["q7-energy-routine"],
+      selectedOptionIds: ["q7-body-routine"],
     },
     {
       questionId: "q8-growth-direction",
       type: "multi-select",
-      selectedOptionIds: ["q8-more-stable"],
+      selectedOptionIds: ["q8-more-self-caring"],
     },
     {
       questionId: "q9-future-self-note",
@@ -61,60 +61,86 @@ const completedAnswer: OnboardingAnswerRecord = {
   ],
 };
 
-const manualProfile: ManualProfile = {
-  version: "1.0",
-  selfClarity: "hazy",
-  identifiedParameters: [],
-  pendingObservations: [],
-  suggestedSubsystems: [],
-  editableSections: [],
+const startupScanProfile: StartupScanProfile = {
+  version: "1.1",
+  completedAt: "2026-05-18T08:00:00.000Z",
+  scanStatus: "completed",
+  scanClues: [
+    {
+      id: "state-recovery-scan",
+      text: "状态下降时的信号可能和「睡眠」有关。",
+      sourceAnswerRefs: [
+        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
+      ],
+    },
+  ],
+  suggestedSubsystems: [
+    {
+      id: "ecosystem",
+      label: "个人生态系统",
+      reason: "你的回答提到了「睡眠」，可以先用个人生态系统观察作息。",
+      sourceAnswerRefs: [
+        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
+      ],
+    },
+  ],
 };
 
 function createAdapter(
   snapshot: {
     onboardingAnswer: OnboardingAnswerRecord | null;
-    manualProfile: ManualProfile | null;
+    startupScanProfile: StartupScanProfile | null;
   },
 ): AppShellDataAdapter {
   return {
     read: vi.fn().mockResolvedValue(snapshot),
     saveOnboardingAnswer: vi.fn().mockResolvedValue(undefined),
-    saveManualProfile: vi.fn().mockResolvedValue(undefined),
+    saveStartupScanProfile: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
 }
 
 describe("AppShell", () => {
-  it("shows the startup and onboarding flow when no profile is saved", async () => {
-    render(<AppShell dataAdapter={createAdapter({ onboardingAnswer: null, manualProfile: null })} />);
-
-    expect(await screen.findByText("启动 LifeOS")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "建立个人说明书" }));
-
-    expect(screen.getByLabelText("LifeOS 引导流程")).toBeInTheDocument();
-  });
-
-  it("shows the manual panel when a saved profile exists", async () => {
+  it("shows the startup and onboarding flow when no startup scan is saved", async () => {
     render(
       <AppShell
         dataAdapter={createAdapter({
-          onboardingAnswer: completedAnswer,
-          manualProfile,
+          onboardingAnswer: null,
+          startupScanProfile: null,
         })}
       />,
     );
 
-    expect(await screen.findByText("个人说明书控制面板")).toBeInTheDocument();
+    expect(await screen.findByText("启动 LifeOS")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "开始初始扫描" }));
+
+    expect(screen.getByLabelText("LifeOS 引导流程")).toBeInTheDocument();
+  });
+
+  it("shows the startup dashboard when a saved scan exists", async () => {
+    render(
+      <AppShell
+        dataAdapter={createAdapter({
+          onboardingAnswer: completedAnswer,
+          startupScanProfile,
+        })}
+      />,
+    );
+
+    expect(await screen.findByText("LifeOS 启动面板")).toBeInTheDocument();
   });
 
   it("saves onboarding output and returns to first-run after reset", async () => {
     const user = userEvent.setup();
-    const adapter = createAdapter({ onboardingAnswer: null, manualProfile: null });
+    const adapter = createAdapter({
+      onboardingAnswer: null,
+      startupScanProfile: null,
+    });
 
     render(
       <AppShell
         dataAdapter={adapter}
-        generateProfile={() => manualProfile}
+        generateStartupScan={() => startupScanProfile}
         initialMode="onboarding"
       />,
     );
@@ -128,9 +154,9 @@ describe("AppShell", () => {
 
     await waitFor(() => {
       expect(adapter.saveOnboardingAnswer).toHaveBeenCalledOnce();
-      expect(adapter.saveManualProfile).toHaveBeenCalledOnce();
+      expect(adapter.saveStartupScanProfile).toHaveBeenCalledOnce();
     });
-    expect(screen.getByText("个人说明书控制面板")).toBeInTheDocument();
+    expect(screen.getByText("LifeOS 启动面板")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "重置本地数据" }));
     await user.type(screen.getByLabelText("输入 RESET 确认重置"), "RESET");

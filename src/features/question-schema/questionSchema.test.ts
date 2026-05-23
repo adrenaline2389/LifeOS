@@ -52,7 +52,34 @@ describe("ONBOARDING_QUESTIONS", () => {
       title: "有什么是你希望未来的自己不要忘记的？",
       placeholder:
         "可以是一句话、一个提醒、一个底线，或一个你正在努力相信的东西。",
-      writeTargets: ["个人说明书首页", "给未来自己的备注"],
+      writeTargets: ["扫描备注"],
+    });
+  });
+
+  it("contains ecosystem signals and no manual subsystem signals", () => {
+    const allSignalTags = ONBOARDING_QUESTIONS.flatMap((question) =>
+      question.type === "multi-select"
+        ? question.options.flatMap((option) => option.signalTags)
+        : [],
+    );
+
+    expect(
+      allSignalTags.filter((signalTag) => signalTag === "子系统:ecosystem").length,
+    ).toBeGreaterThanOrEqual(6);
+    expect(allSignalTags).not.toContain("子系统:manual");
+
+    const question7 =
+      ONBOARDING_QUESTIONS.find((question) => question.id === "q7-current-improvement-area");
+
+    expect(question7).toMatchObject({
+      type: "multi-select",
+      options: expect.arrayContaining([
+        expect.objectContaining({
+          id: "q7-body-routine",
+          label: "作息、饮食与身体状态",
+          signalTags: expect.arrayContaining(["子系统:ecosystem"]),
+        }),
+      ]),
     });
   });
 });

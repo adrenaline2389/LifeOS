@@ -2,27 +2,33 @@
 
 import { useEffect, useState } from "react";
 
-import { clearLifeOSLocalData, lifeOSLocalDatabase, readLifeOSLocalData, saveManualProfile, saveOnboardingAnswerRecord } from "@/features/local-data";
-import { generateManualProfile } from "@/features/manual-generation";
-import { ManualPanel } from "@/features/manual-panel";
+import {
+  clearLifeOSLocalData,
+  lifeOSLocalDatabase,
+  readLifeOSLocalData,
+  saveOnboardingAnswerRecord,
+  saveStartupScanProfile,
+} from "@/features/local-data";
 import { OnboardingFlow } from "@/features/onboarding";
 import { StartupScreen, WindowFrame } from "@/features/retro-ui";
+import { StartupDashboard } from "@/features/startup-dashboard";
+import { generateStartupScanProfile } from "@/features/startup-scan-generation";
 import type {
-  ManualProfile,
   OnboardingAnswerRecord,
+  StartupScanProfile,
 } from "@/types/lifeos";
 
 import styles from "./app-shell.module.css";
 
 export type AppShellDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
-  manualProfile: ManualProfile | null;
+  startupScanProfile: StartupScanProfile | null;
 };
 
 export type AppShellDataAdapter = {
   read: () => Promise<AppShellDataSnapshot>;
   saveOnboardingAnswer: (record: OnboardingAnswerRecord) => Promise<void>;
-  saveManualProfile: (profile: ManualProfile) => Promise<void>;
+  saveStartupScanProfile: (profile: StartupScanProfile) => Promise<void>;
   clear: () => Promise<void>;
 };
 
@@ -30,7 +36,7 @@ export type AppShellMode = "loading" | "startup" | "onboarding" | "dashboard";
 
 export type AppShellProps = {
   dataAdapter?: AppShellDataAdapter;
-  generateProfile?: (record: OnboardingAnswerRecord) => ManualProfile;
+  generateStartupScan?: (record: OnboardingAnswerRecord) => StartupScanProfile;
   initialMode?: Exclude<AppShellMode, "loading">;
 };
 
@@ -38,19 +44,19 @@ const defaultDataAdapter: AppShellDataAdapter = {
   read: () => readLifeOSLocalData(lifeOSLocalDatabase),
   saveOnboardingAnswer: (record) =>
     saveOnboardingAnswerRecord(lifeOSLocalDatabase, record),
-  saveManualProfile: (profile) => saveManualProfile(lifeOSLocalDatabase, profile),
+  saveStartupScanProfile: (profile) =>
+    saveStartupScanProfile(lifeOSLocalDatabase, profile),
   clear: () => clearLifeOSLocalData(lifeOSLocalDatabase),
 };
 
 export function AppShell({
   dataAdapter = defaultDataAdapter,
-  generateProfile = generateManualProfile,
+  generateStartupScan = generateStartupScanProfile,
   initialMode,
 }: AppShellProps) {
   const [mode, setMode] = useState<AppShellMode>(initialMode ?? "loading");
-  const [onboardingAnswer, setOnboardingAnswer] =
-    useState<OnboardingAnswerRecord | null>(null);
-  const [manualProfile, setManualProfile] = useState<ManualProfile | null>(null);
+  const [startupScanProfile, setStartupScanProfile] =
+    useState<StartupScanProfile | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,10 +67,9 @@ export function AppShell({
       .then((snapshot) => {
         if (!active) return;
 
-        setOnboardingAnswer(snapshot.onboardingAnswer);
-        setManualProfile(snapshot.manualProfile);
+        setStartupScanProfile(snapshot.startupScanProfile);
 
-        if (snapshot.manualProfile) {
+        if (snapshot.startupScanProfile) {
           setMode("dashboard");
           return;
         }
@@ -85,25 +90,18 @@ export function AppShell({
   }, [dataAdapter, initialMode]);
 
   async function handleOnboardingComplete(record: OnboardingAnswerRecord) {
-    const profile = generateProfile(record);
+    const profile = generateStartupScan(record);
 
     await dataAdapter.saveOnboardingAnswer(record);
-    await dataAdapter.saveManualProfile(profile);
+    await dataAdapter.saveStartupScanProfile(profile);
 
-    setOnboardingAnswer(record);
-    setManualProfile(profile);
+    setStartupScanProfile(profile);
     setMode("dashboard");
-  }
-
-  async function handleProfileChange(profile: ManualProfile) {
-    await dataAdapter.saveManualProfile(profile);
-    setManualProfile(profile);
   }
 
   async function handleReset() {
     await dataAdapter.clear();
-    setOnboardingAnswer(null);
-    setManualProfile(null);
+    setStartupScanProfile(null);
     setMode("startup");
   }
 
@@ -114,16 +112,16 @@ export function AppShell({
           <StartupScreen
             status="正在读取个人档案..."
             subtitle="请稍候，本地小电脑正在检查 IndexedDB。"
-            title="LifeOS v1.0"
+            title="LifeOS v1.1"
           />
         ) : null}
 
         {mode === "startup" ? (
           <StartupScreen
-            actionLabel="建立个人说明书"
+            actionLabel="开始初始扫描"
             onAction={() => setMode("onboarding")}
-            status={errorMessage ?? "未发现本地个人说明书档案。"}
-            subtitle="第一版只做一件事：从 9 个问题开始，生成一份待验证的个人说明书。"
+            status={errorMessage ?? "未发现本地启动扫描结果。"}
+            subtitle="先用 9 个问题完成初始扫描，再进入六个子系统地图。"
             title="启动 LifeOS"
           />
         ) : null}
@@ -131,18 +129,16 @@ export function AppShell({
         {mode === "onboarding" ? (
           <WindowFrame
             statusBar="完成前不会写入本地数据。"
-            title="建立个人说明书"
+            title="初始扫描"
           >
             <OnboardingFlow onComplete={handleOnboardingComplete} />
           </WindowFrame>
         ) : null}
 
-        {mode === "dashboard" && manualProfile ? (
-          <ManualPanel
-            onboardingAnswer={onboardingAnswer}
-            onProfileChange={handleProfileChange}
+        {mode === "dashboard" && startupScanProfile ? (
+          <StartupDashboard
             onResetConfirmed={handleReset}
-            profile={manualProfile}
+            profile={startupScanProfile}
           />
         ) : null}
       </div>

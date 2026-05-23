@@ -9,3 +9,7 @@ dist
 .env
 .env.*
 !.env.example
+
+# Local agent/browser verification artifacts
+.superpowers/
+.playwright-cli/

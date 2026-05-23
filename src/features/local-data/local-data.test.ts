@@ -1,14 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { ManualProfile, OnboardingAnswerRecord } from "@/types/lifeos";
+import type { OnboardingAnswerRecord, StartupScanProfile } from "@/types/lifeos";
 import {
   clearLifeOSLocalData,
   createLifeOSLocalDatabase,
-  readLifeOSLocalExportData,
   readLifeOSLocalData,
-  readManualProfile,
   readOnboardingAnswerRecord,
-  saveManualProfile,
+  readStartupScanProfile,
   saveOnboardingAnswerRecord,
+  saveStartupScanProfile,
 } from "./index";
 
 const testDatabases: Array<ReturnType<typeof createLifeOSLocalDatabase>> = [];
@@ -37,12 +36,12 @@ const onboardingAnswerRecord: OnboardingAnswerRecord = {
   completedAt: "2026-05-18T08:00:00.000Z",
   answers: [
     {
-      questionId: "q1",
+      questionId: "q1-state-decline-signal",
       type: "multi-select",
-      selectedOptionIds: ["action"],
+      selectedOptionIds: ["q1-sleep"],
     },
     {
-      questionId: "q9",
+      questionId: "q9-future-self-note",
       type: "short-text",
       value: "慢慢来，但不要停。",
       skipped: false,
@@ -50,41 +49,27 @@ const onboardingAnswerRecord: OnboardingAnswerRecord = {
   ],
 };
 
-const manualProfile: ManualProfile = {
-  version: "1.0",
-  selfClarity: "hazy",
-  identifiedParameters: [
+const startupScanProfile: StartupScanProfile = {
+  version: "1.1",
+  completedAt: "2026-05-18T08:00:00.000Z",
+  scanStatus: "completed",
+  scanClues: [
     {
-      id: "energy-signal",
-      label: "压力信号",
-      values: ["行动力"],
-      sourceQuestionIds: ["q1"],
-    },
-  ],
-  pendingObservations: [
-    {
-      id: "low-energy-action",
-      text: "你在压力状态下可能会先失去行动力。",
-      status: "pending",
-      sourceAnswerRefs: [{ questionId: "q1", optionId: "action" }],
+      id: "state-recovery-scan",
+      text: "初始扫描记录了睡眠这个信号。",
+      sourceAnswerRefs: [
+        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
+      ],
     },
   ],
   suggestedSubsystems: [
     {
-      id: "energy",
-      label: "能量管理系统",
-      reason: "压力信号和恢复方式都指向精力管理。",
-      sourceAnswerRefs: [{ questionId: "q1", optionId: "action" }],
-    },
-  ],
-  futureSelfNote: "慢慢来，但不要停。",
-  editableSections: [
-    {
-      id: "homepage",
-      title: "个人说明书首页",
-      content: "先照顾能量，再推进事情。",
-      source: "generated",
-      updatedAt: "2026-05-18T08:00:00.000Z",
+      id: "ecosystem",
+      label: "个人生态系统",
+      reason: "你的回答提到了「睡眠」，可以先看个人生态系统。",
+      sourceAnswerRefs: [
+        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
+      ],
     },
   ],
 };
@@ -94,10 +79,10 @@ describe("LifeOS local data storage", () => {
     const database = createTestDatabase();
 
     await expect(readOnboardingAnswerRecord(database)).resolves.toBeNull();
-    await expect(readManualProfile(database)).resolves.toBeNull();
+    await expect(readStartupScanProfile(database)).resolves.toBeNull();
     await expect(readLifeOSLocalData(database)).resolves.toEqual({
       onboardingAnswer: null,
-      manualProfile: null,
+      startupScanProfile: null,
     });
   });
 
@@ -111,38 +96,26 @@ describe("LifeOS local data storage", () => {
     );
   });
 
-  it("saves and reads the current manual profile", async () => {
+  it("saves and reads the current startup scan profile", async () => {
     const database = createTestDatabase();
 
-    await saveManualProfile(database, manualProfile);
+    await saveStartupScanProfile(database, startupScanProfile);
 
-    await expect(readManualProfile(database)).resolves.toEqual(manualProfile);
+    await expect(readStartupScanProfile(database)).resolves.toEqual(
+      startupScanProfile,
+    );
   });
 
   it("clears all persisted LifeOS data", async () => {
     const database = createTestDatabase();
     await saveOnboardingAnswerRecord(database, onboardingAnswerRecord);
-    await saveManualProfile(database, manualProfile);
+    await saveStartupScanProfile(database, startupScanProfile);
 
     await clearLifeOSLocalData(database);
 
     await expect(readLifeOSLocalData(database)).resolves.toEqual({
       onboardingAnswer: null,
-      manualProfile: null,
-    });
-  });
-
-  it("builds export data from persisted LifeOS data", async () => {
-    const database = createTestDatabase();
-    await saveOnboardingAnswerRecord(database, onboardingAnswerRecord);
-    await saveManualProfile(database, manualProfile);
-
-    await expect(
-      readLifeOSLocalExportData(database, "2026-05-18T09:00:00.000Z"),
-    ).resolves.toEqual({
-      exportedAt: "2026-05-18T09:00:00.000Z",
-      onboardingAnswer: onboardingAnswerRecord,
-      manualProfile,
+      startupScanProfile: null,
     });
   });
 });

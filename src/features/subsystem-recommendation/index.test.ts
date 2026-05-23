@@ -23,15 +23,66 @@ function answerRecord(
 }
 
 describe("subsystem recommendation", () => {
-  it("exposes the v1.0 candidate subsystem list", () => {
+  it("exposes the v1.1 candidate subsystem list", () => {
     expect(candidateSubsystems).toEqual([
-      { id: "energy", label: "能量管理系统" },
-      { id: "goals", label: "人生目标管理系统" },
-      { id: "relationships", label: "人际关系管理系统" },
-      { id: "finance", label: "财务管理系统" },
-      { id: "cognition", label: "认知管理系统" },
-      { id: "manual", label: "个人说明书系统" },
+      { id: "ecosystem", label: "个人生态系统", description: "生理基础与生活环境。" },
+      { id: "energy", label: "能量管理系统", description: "心理余量与恢复。" },
+      { id: "cognition", label: "认知管理系统", description: "信息、学习、判断和反思。" },
+      { id: "goals", label: "人生目标管理系统", description: "方向、项目和行动。" },
+      { id: "relationships", label: "人际关系管理系统", description: "连接、沟通和边界。" },
+      { id: "finance", label: "财务管理系统", description: "资源、消费和自由度。" },
     ]);
+  });
+
+  it("recommends the personal ecosystem subsystem from body and environment answers", () => {
+    const suggestions = recommendSubsystems(
+      answerRecord([
+        ["q1-state-decline-signal", ["q1-sleep", "q1-food"]],
+        ["q2-recovery-method", ["q2-sleep", "q2-tidy-space"]],
+        ["q7-current-improvement-area", ["q7-body-routine"]],
+        ["q8-growth-direction", ["q8-more-self-caring"]],
+      ]),
+    );
+
+    expect(suggestions[0]).toMatchObject({
+      id: "ecosystem",
+      label: "个人生态系统",
+    });
+    expect(suggestions[0]?.reason).toContain("睡眠");
+    expect(suggestions[0]?.sourceAnswerRefs).toEqual(
+      expect.arrayContaining([
+        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
+        { questionId: "q2-recovery-method", optionId: "q2-sleep" },
+        { questionId: "q7-current-improvement-area", optionId: "q7-body-routine" },
+      ]),
+    );
+  });
+
+  it("does not recommend the personal manual subsystem from unclear or future-note answers", () => {
+    const suggestions = recommendSubsystems({
+      completedAt,
+      answers: [
+        {
+          questionId: "q1-state-decline-signal",
+          type: "multi-select",
+          selectedOptionIds: ["q1-unclear"],
+        },
+        {
+          questionId: "q3-action-rhythm",
+          type: "multi-select",
+          selectedOptionIds: ["q3-not-observed"],
+        },
+        {
+          questionId: "q9-future-self-note",
+          type: "short-text",
+          value: "以后再慢慢补充。",
+          skipped: false,
+        },
+      ],
+    });
+
+    expect(candidateSubsystems.some((subsystem) => String(subsystem.id) === "manual")).toBe(false);
+    expect(suggestions.some((suggestion) => String(suggestion.id) === "manual")).toBe(false);
   });
 
   it("recommends the finance subsystem from money-related answers", () => {
@@ -82,12 +133,12 @@ describe("subsystem recommendation", () => {
     );
   });
 
-  it("recommends the energy subsystem from energy-related answers", () => {
+  it("recommends the energy subsystem from psychological energy answers", () => {
     const suggestions = recommendSubsystems(
       answerRecord([
-        ["q1-state-decline-signal", ["q1-sleep"]],
-        ["q2-recovery-method", ["q2-walk"]],
-        ["q7-current-improvement-area", ["q7-energy-routine"]],
+        ["q1-state-decline-signal", ["q1-emotional-stability"]],
+        ["q2-recovery-method", ["q2-disconnect"]],
+        ["q7-current-improvement-area", ["q7-emotional-stability"]],
         ["q8-growth-direction", ["q8-more-stable"]],
       ]),
     );
@@ -96,11 +147,11 @@ describe("subsystem recommendation", () => {
       id: "energy",
       label: "能量管理系统",
     });
-    expect(suggestions[0]?.reason).toContain("睡眠");
+    expect(suggestions[0]?.reason).toContain("情绪稳定");
     expect(suggestions[0]?.sourceAnswerRefs).toEqual(
       expect.arrayContaining([
-        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
-        { questionId: "q2-recovery-method", optionId: "q2-walk" },
+        { questionId: "q1-state-decline-signal", optionId: "q1-emotional-stability" },
+        { questionId: "q2-recovery-method", optionId: "q2-disconnect" },
       ]),
     );
   });
@@ -113,7 +164,7 @@ describe("subsystem recommendation", () => {
       ["q4-communication-comfort", ["q4-direct-point"]],
       [
         "q7-current-improvement-area",
-        ["q7-money-spending", "q7-relationships-communication", "q7-energy-routine"],
+        ["q7-money-spending", "q7-relationships-communication", "q7-emotional-stability"],
       ],
       [
         "q8-growth-direction",

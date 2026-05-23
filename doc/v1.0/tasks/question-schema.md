@@ -10,7 +10,7 @@
 
 ## 输入
 
-- `doc/design.md` 中的 9 道题设计
+- `doc/v1.0/design.md` 中的 9 道题设计
 
 ## 输出
 

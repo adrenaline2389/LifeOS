@@ -1,0 +1,97 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+
+import type { StartupScanProfile } from "@/types/lifeos";
+
+import { StartupDashboard } from "./StartupDashboard";
+
+const profile: StartupScanProfile = {
+  version: "1.1",
+  completedAt: "2026-05-18T08:00:00.000Z",
+  scanStatus: "completed",
+  scanClues: [
+    {
+      id: "state-recovery-scan",
+      text: "状态下降时的信号可能和「睡眠」有关，恢复线索可能来自「睡觉」。",
+      sourceAnswerRefs: [
+        { questionId: "q1-state-decline-signal", optionId: "q1-sleep" },
+        { questionId: "q2-recovery-method", optionId: "q2-sleep" },
+      ],
+    },
+  ],
+  suggestedSubsystems: [
+    {
+      id: "ecosystem",
+      label: "个人生态系统",
+      reason: "你的回答提到了「睡眠」，可以先用个人生态系统观察作息、身体状态和生活环境。",
+      sourceAnswerRefs: [
+        {
+          questionId: "q1-state-decline-signal",
+          optionId: "q1-sleep",
+        },
+      ],
+    },
+  ],
+};
+
+describe("StartupDashboard", () => {
+  it("renders the LifeOS startup dashboard with six subsystem entries", () => {
+    render(
+      <StartupDashboard
+        onResetConfirmed={vi.fn()}
+        profile={profile}
+      />,
+    );
+
+    expect(screen.getByText("LifeOS 启动面板")).toBeInTheDocument();
+    expect(screen.getByText("初始扫描完成")).toBeInTheDocument();
+    expect(screen.getAllByText("建议优先开启").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("个人生态系统").length).toBeGreaterThan(0);
+    expect(screen.getByText("能量管理系统")).toBeInTheDocument();
+    expect(screen.getByText("认知管理系统")).toBeInTheDocument();
+    expect(screen.getByText("人生目标管理系统")).toBeInTheDocument();
+    expect(screen.getByText("人际关系管理系统")).toBeInTheDocument();
+    expect(screen.getByText("财务管理系统")).toBeInTheDocument();
+    expect(screen.getByText("生理基础与生活环境。")).toBeInTheDocument();
+    expect(screen.getByText(profile.scanClues[0].text)).toBeInTheDocument();
+    expect(screen.getAllByText("第 1 题：睡眠").length).toBeGreaterThan(0);
+  });
+
+  it("does not render manual editing or export actions", () => {
+    render(
+      <StartupDashboard
+        onResetConfirmed={vi.fn()}
+        profile={profile}
+      />,
+    );
+
+    expect(screen.queryByText("自我清晰度")).not.toBeInTheDocument();
+    expect(screen.queryByText("完整个人说明书")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "打开完整说明书" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "导出 JSON" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "导出 Markdown" })).not.toBeInTheDocument();
+  });
+
+  it("requires explicit reset confirmation", async () => {
+    const user = userEvent.setup();
+    const onResetConfirmed = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <StartupDashboard
+        onResetConfirmed={onResetConfirmed}
+        profile={profile}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "重置本地数据" }));
+    await user.click(screen.getByRole("button", { name: "确认重置" }));
+
+    expect(onResetConfirmed).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText("输入 RESET 确认重置"), "RESET");
+    await user.click(screen.getByRole("button", { name: "确认重置" }));
+
+    expect(onResetConfirmed).toHaveBeenCalledOnce();
+  });
+});

@@ -1,8 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
-  LifeOSExportData,
-  ManualProfile,
   OnboardingAnswerRecord,
+  StartupScanProfile,
 } from "@/types/lifeos";
 
 export const LIFEOS_LOCAL_DATABASE_NAME = "lifeos-v1";
@@ -15,17 +14,20 @@ type StoredOnboardingAnswerRecord = {
   updatedAt: string;
 };
 
-type StoredManualProfile = {
+type StoredStartupScanProfile = {
   id: typeof CURRENT_RECORD_ID;
-  value: ManualProfile;
+  value: StartupScanProfile;
   updatedAt: string;
 };
 
-export type LifeOSLocalDataSnapshot = Omit<LifeOSExportData, "exportedAt">;
+export type LifeOSLocalDataSnapshot = {
+  onboardingAnswer: OnboardingAnswerRecord | null;
+  startupScanProfile: StartupScanProfile | null;
+};
 
 export class LifeOSLocalDatabase extends Dexie {
   onboardingAnswers!: Table<StoredOnboardingAnswerRecord, string>;
-  manualProfiles!: Table<StoredManualProfile, string>;
+  startupScanProfiles!: Table<StoredStartupScanProfile, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -33,6 +35,11 @@ export class LifeOSLocalDatabase extends Dexie {
     this.version(1).stores({
       onboardingAnswers: "id, updatedAt",
       manualProfiles: "id, updatedAt",
+    });
+    this.version(2).stores({
+      onboardingAnswers: "id, updatedAt",
+      manualProfiles: null,
+      startupScanProfiles: "id, updatedAt",
     });
   }
 }
@@ -63,21 +70,21 @@ export const readOnboardingAnswerRecord = async (
   return storedRecord?.value ?? null;
 };
 
-export const saveManualProfile = async (
+export const saveStartupScanProfile = async (
   database: LifeOSLocalDatabase,
-  profile: ManualProfile,
+  profile: StartupScanProfile,
 ): Promise<void> => {
-  await database.manualProfiles.put({
+  await database.startupScanProfiles.put({
     id: CURRENT_RECORD_ID,
     value: profile,
     updatedAt: currentTimestamp(),
   });
 };
 
-export const readManualProfile = async (
+export const readStartupScanProfile = async (
   database: LifeOSLocalDatabase,
-): Promise<ManualProfile | null> => {
-  const storedProfile = await database.manualProfiles.get(CURRENT_RECORD_ID);
+): Promise<StartupScanProfile | null> => {
+  const storedProfile = await database.startupScanProfiles.get(CURRENT_RECORD_ID);
   return storedProfile?.value ?? null;
 };
 
@@ -85,15 +92,7 @@ export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
   onboardingAnswer: await readOnboardingAnswerRecord(database),
-  manualProfile: await readManualProfile(database),
-});
-
-export const readLifeOSLocalExportData = async (
-  database: LifeOSLocalDatabase,
-  exportedAt = currentTimestamp(),
-): Promise<LifeOSExportData> => ({
-  exportedAt,
-  ...(await readLifeOSLocalData(database)),
+  startupScanProfile: await readStartupScanProfile(database),
 });
 
 export const clearLifeOSLocalData = async (
@@ -102,10 +101,10 @@ export const clearLifeOSLocalData = async (
   await database.transaction(
     "rw",
     database.onboardingAnswers,
-    database.manualProfiles,
+    database.startupScanProfiles,
     async () => {
       await database.onboardingAnswers.clear();
-      await database.manualProfiles.clear();
+      await database.startupScanProfiles.clear();
     },
   );
 };

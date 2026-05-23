@@ -22,12 +22,12 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q1-sleep",
         label: "睡眠",
-        signalTags: ["压力信号:睡眠", "子系统:energy"],
+        signalTags: ["压力信号:睡眠", "子系统:ecosystem"],
       },
       {
         id: "q1-food",
         label: "饮食",
-        signalTags: ["压力信号:饮食", "子系统:energy"],
+        signalTags: ["压力信号:饮食", "子系统:ecosystem"],
       },
       {
         id: "q1-social-patience",
@@ -67,22 +67,22 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q2-solitude",
         label: "独处",
-        signalTags: ["恢复方式:独处", "低能量处理"],
+        signalTags: ["恢复方式:独处", "低能量处理", "子系统:energy"],
       },
       {
         id: "q2-sleep",
         label: "睡觉",
-        signalTags: ["恢复方式:睡觉", "子系统:energy"],
+        signalTags: ["恢复方式:睡觉", "子系统:ecosystem"],
       },
       {
         id: "q2-walk",
         label: "散步",
-        signalTags: ["恢复方式:散步", "子系统:energy"],
+        signalTags: ["恢复方式:散步", "子系统:ecosystem"],
       },
       {
         id: "q2-tidy-space",
         label: "整理环境",
-        signalTags: ["恢复方式:整理环境", "生活秩序"],
+        signalTags: ["恢复方式:整理环境", "生活秩序", "子系统:ecosystem"],
       },
       {
         id: "q2-trusted-talk",
@@ -97,17 +97,17 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q2-music-content",
         label: "听音乐或看内容",
-        signalTags: ["恢复方式:内容输入", "低能量处理"],
+        signalTags: ["恢复方式:内容输入", "低能量处理", "子系统:energy"],
       },
       {
         id: "q2-exercise",
         label: "运动",
-        signalTags: ["恢复方式:运动", "子系统:energy"],
+        signalTags: ["恢复方式:运动", "子系统:ecosystem"],
       },
       {
         id: "q2-disconnect",
         label: "暂时断开一切",
-        signalTags: ["恢复方式:断开连接", "边界"],
+        signalTags: ["恢复方式:断开连接", "边界", "子系统:energy"],
       },
     ],
   },
@@ -222,42 +222,42 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q5-rush-me",
         label: "催促我",
-        signalTags: ["雷区:催促", "边界"],
+        signalTags: ["雷区:催促", "边界", "子系统:relationships"],
       },
       {
         id: "q5-repeat-questions",
         label: "反复追问",
-        signalTags: ["雷区:反复追问", "边界"],
+        signalTags: ["雷区:反复追问", "边界", "子系统:relationships"],
       },
       {
         id: "q5-dismiss-feelings",
         label: "否定我的感受",
-        signalTags: ["雷区:否定感受", "低状态交互"],
+        signalTags: ["雷区:否定感受", "低状态交互", "子系统:relationships"],
       },
       {
         id: "q5-decide-for-me",
         label: "替我做决定",
-        signalTags: ["雷区:代做决定", "边界"],
+        signalTags: ["雷区:代做决定", "边界", "子系统:relationships"],
       },
       {
         id: "q5-preach",
         label: "讲大道理",
-        signalTags: ["雷区:讲大道理", "低状态交互"],
+        signalTags: ["雷区:讲大道理", "低状态交互", "子系统:relationships"],
       },
       {
         id: "q5-sudden-plan-change",
         label: "突然改变计划",
-        signalTags: ["雷区:突然改计划", "边界"],
+        signalTags: ["雷区:突然改计划", "边界", "子系统:relationships"],
       },
       {
         id: "q5-demand-instant-reply",
         label: "要求我立刻回应",
-        signalTags: ["雷区:立刻回应", "边界"],
+        signalTags: ["雷区:立刻回应", "边界", "子系统:relationships"],
       },
       {
         id: "q5-show-disappointment",
         label: "表现得很失望",
-        signalTags: ["雷区:失望表达", "低状态交互"],
+        signalTags: ["雷区:失望表达", "低状态交互", "子系统:relationships"],
       },
     ],
   },
@@ -267,47 +267,47 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
     title: "如果有人想长期和你合作或相处，他最好先知道什么？",
     type: "multi-select",
     minSelections: 1,
-    writeTargets: ["别人如何与我相处", "关系说明书"],
+    writeTargets: ["关系信号", "边界"],
     options: [
       {
         id: "q6-need-space",
         label: "我需要空间",
-        signalTags: ["关系说明:需要空间", "边界"],
+        signalTags: ["关系说明:需要空间", "边界", "子系统:relationships"],
       },
       {
         id: "q6-clear-expectations",
         label: "我需要明确预期",
-        signalTags: ["关系说明:明确预期", "协作偏好"],
+        signalTags: ["关系说明:明确预期", "协作偏好", "子系统:relationships"],
       },
       {
         id: "q6-not-instant-reply",
         label: "我不擅长即时回应",
-        signalTags: ["关系说明:非即时回应", "沟通偏好"],
+        signalTags: ["关系说明:非即时回应", "沟通偏好", "子系统:relationships"],
       },
       {
         id: "q6-serious-commitments",
         label: "我对承诺很认真",
-        signalTags: ["关系说明:重视承诺", "协作偏好"],
+        signalTags: ["关系说明:重视承诺", "协作偏好", "子系统:relationships"],
       },
       {
         id: "q6-overthink",
         label: "我容易想太多",
-        signalTags: ["关系说明:容易多想", "待验证观察"],
+        signalTags: ["关系说明:容易多想", "待验证观察", "子系统:relationships"],
       },
       {
         id: "q6-respect-boundaries",
         label: "我需要被尊重边界",
-        signalTags: ["关系说明:尊重边界", "边界"],
+        signalTags: ["关系说明:尊重边界", "边界", "子系统:relationships"],
       },
       {
         id: "q6-relax-after-familiar",
         label: "我在熟悉后才放松",
-        signalTags: ["关系说明:熟悉后放松", "关系节奏"],
+        signalTags: ["关系说明:熟悉后放松", "关系节奏", "子系统:relationships"],
       },
       {
         id: "q6-expression-feeling-async",
         label: "我的表达方式可能和感受不同步",
-        signalTags: ["关系说明:表达感受不同步", "沟通偏好"],
+        signalTags: ["关系说明:表达感受不同步", "沟通偏好", "子系统:relationships"],
       },
     ],
   },
@@ -320,9 +320,9 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
     writeTargets: ["建议开启的子系统", "当前改善方向"],
     options: [
       {
-        id: "q7-energy-routine",
-        label: "作息与精力",
-        signalTags: ["改善方向:作息与精力", "子系统:energy"],
+        id: "q7-body-routine",
+        label: "作息、饮食与身体状态",
+        signalTags: ["改善方向:作息饮食身体", "子系统:ecosystem"],
       },
       {
         id: "q7-procrastination-action",
@@ -352,7 +352,7 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q7-self-knowledge",
         label: "自我认知",
-        signalTags: ["改善方向:自我认知", "子系统:manual"],
+        signalTags: ["改善方向:自我认知", "子系统:cognition"],
       },
       {
         id: "q7-learning-growth",
@@ -362,7 +362,7 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q7-life-order",
         label: "生活秩序",
-        signalTags: ["改善方向:生活秩序", "子系统:energy"],
+        signalTags: ["改善方向:生活秩序", "子系统:ecosystem"],
       },
     ],
   },
@@ -392,7 +392,7 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       {
         id: "q8-more-self-caring",
         label: "更会照顾自己的人",
-        signalTags: ["成长方向:照顾自己", "子系统:energy"],
+        signalTags: ["成长方向:照顾自己", "子系统:ecosystem"],
       },
       {
         id: "q8-better-relationships",
@@ -428,6 +428,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
     type: "short-text",
     optional: true,
     placeholder: "可以是一句话、一个提醒、一个底线，或一个你正在努力相信的东西。",
-    writeTargets: ["个人说明书首页", "给未来自己的备注"],
+    writeTargets: ["扫描备注"],
   },
 ];

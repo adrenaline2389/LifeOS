@@ -55,27 +55,13 @@ export type SourceAnswerRef = {
   optionId?: string;
 };
 
-export type IdentifiedParameter = {
-  id: string;
-  label: string;
-  values: string[];
-  sourceQuestionIds: string[];
-};
-
-export type PendingObservation = {
-  id: string;
-  text: string;
-  status: "pending";
-  sourceAnswerRefs: SourceAnswerRef[];
-};
-
 export type SubsystemId =
+  | "ecosystem"
   | "energy"
+  | "cognition"
   | "goals"
   | "relationships"
-  | "finance"
-  | "cognition"
-  | "manual";
+  | "finance";
 
 export type SuggestedSubsystem = {
   id: SubsystemId;
@@ -84,26 +70,16 @@ export type SuggestedSubsystem = {
   sourceAnswerRefs: SourceAnswerRef[];
 };
 
-export type ManualSection = {
+export type StartupScanClue = {
   id: string;
-  title: string;
-  content: string;
-  source: "generated" | "user-edited";
-  updatedAt: string;
+  text: string;
+  sourceAnswerRefs: SourceAnswerRef[];
 };
 
-export type ManualProfile = {
-  version: "1.0";
-  selfClarity: "hazy";
-  identifiedParameters: IdentifiedParameter[];
-  pendingObservations: PendingObservation[];
+export type StartupScanProfile = {
+  version: "1.1";
+  completedAt: string;
+  scanStatus: "completed";
+  scanClues: StartupScanClue[];
   suggestedSubsystems: SuggestedSubsystem[];
-  futureSelfNote?: string;
-  editableSections: ManualSection[];
-};
-
-export type LifeOSExportData = {
-  exportedAt: string;
-  onboardingAnswer: OnboardingAnswerRecord | null;
-  manualProfile: ManualProfile | null;
 };

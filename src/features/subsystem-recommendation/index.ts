@@ -9,7 +9,9 @@ import type {
 } from "@/types/lifeos";
 import { ONBOARDING_QUESTIONS } from "@/features/question-schema";
 
-type CandidateSubsystem = Pick<SuggestedSubsystem, "id" | "label">;
+type CandidateSubsystem = Pick<SuggestedSubsystem, "id" | "label"> & {
+  description: string;
+};
 
 type AnsweredOption = {
   questionId: string;
@@ -27,12 +29,12 @@ type ScoredSubsystem = CandidateSubsystem & {
 };
 
 export const candidateSubsystems = [
-  { id: "energy", label: "能量管理系统" },
-  { id: "goals", label: "人生目标管理系统" },
-  { id: "relationships", label: "人际关系管理系统" },
-  { id: "finance", label: "财务管理系统" },
-  { id: "cognition", label: "认知管理系统" },
-  { id: "manual", label: "个人说明书系统" },
+  { id: "ecosystem", label: "个人生态系统", description: "生理基础与生活环境。" },
+  { id: "energy", label: "能量管理系统", description: "心理余量与恢复。" },
+  { id: "cognition", label: "认知管理系统", description: "信息、学习、判断和反思。" },
+  { id: "goals", label: "人生目标管理系统", description: "方向、项目和行动。" },
+  { id: "relationships", label: "人际关系管理系统", description: "连接、沟通和边界。" },
+  { id: "finance", label: "财务管理系统", description: "资源、消费和自由度。" },
 ] satisfies CandidateSubsystem[];
 
 export const defaultOnboardingQuestions = [
@@ -44,15 +46,15 @@ export const defaultOnboardingQuestions = [
     minSelections: 1,
     writeTargets: ["压力信号", "能量管理系统入口"],
     options: [
-      { id: "attention", label: "注意力", signalTags: ["energy", "cognition"] },
-      { id: "action", label: "行动力", signalTags: ["energy", "goals"] },
-      { id: "sleep", label: "睡眠", signalTags: ["energy"] },
-      { id: "diet", label: "饮食", signalTags: ["energy"] },
+      { id: "attention", label: "注意力", signalTags: ["cognition"] },
+      { id: "action", label: "行动力", signalTags: ["goals"] },
+      { id: "sleep", label: "睡眠", signalTags: ["ecosystem"] },
+      { id: "diet", label: "饮食", signalTags: ["ecosystem"] },
       { id: "social-patience", label: "社交耐心", signalTags: ["relationships"] },
       { id: "spending-control", label: "消费控制", signalTags: ["finance"] },
       { id: "expression", label: "表达能力", signalTags: ["relationships"] },
       { id: "emotional-stability", label: "情绪稳定", signalTags: ["energy"] },
-      { id: "unclear", label: "我说不清", signalTags: ["manual", "cognition"] },
+      { id: "unclear", label: "我说不清", signalTags: ["cognition"] },
     ],
   },
   {
@@ -63,15 +65,15 @@ export const defaultOnboardingQuestions = [
     minSelections: 1,
     writeTargets: ["恢复方式", "低能量处理方案"],
     options: [
-      { id: "solitude", label: "独处", signalTags: ["energy", "manual"] },
-      { id: "sleep", label: "睡觉", signalTags: ["energy"] },
-      { id: "walk", label: "散步", signalTags: ["energy"] },
-      { id: "tidy", label: "整理环境", signalTags: ["energy", "cognition"] },
+      { id: "solitude", label: "独处", signalTags: ["energy"] },
+      { id: "sleep", label: "睡觉", signalTags: ["ecosystem"] },
+      { id: "walk", label: "散步", signalTags: ["ecosystem"] },
+      { id: "tidy", label: "整理环境", signalTags: ["ecosystem", "cognition"] },
       { id: "trusted-person", label: "和信任的人说话", signalTags: ["relationships"] },
       { id: "small-task", label: "做具体的小事", signalTags: ["energy", "goals"] },
       { id: "music-content", label: "听音乐或看内容", signalTags: ["energy", "cognition"] },
-      { id: "exercise", label: "运动", signalTags: ["energy"] },
-      { id: "disconnect", label: "暂时断开一切", signalTags: ["energy", "manual"] },
+      { id: "exercise", label: "运动", signalTags: ["ecosystem"] },
+      { id: "disconnect", label: "暂时断开一切", signalTags: ["energy"] },
     ],
   },
   {
@@ -89,7 +91,7 @@ export const defaultOnboardingQuestions = [
       { id: "deadline", label: "被外部截止日期推动", signalTags: ["goals"] },
       { id: "together", label: "和别人一起推进", signalTags: ["goals", "relationships"] },
       { id: "inspiration", label: "灵感来了集中做", signalTags: ["goals", "cognition"] },
-      { id: "unclear", label: "我还没观察清楚", signalTags: ["manual", "cognition"] },
+      { id: "unclear", label: "我还没观察清楚", signalTags: ["cognition"] },
     ],
   },
   {
@@ -136,17 +138,17 @@ export const defaultOnboardingQuestions = [
     minSelections: 1,
     writeTargets: ["别人如何与我相处", "关系说明书"],
     options: [
-      { id: "need-space", label: "我需要空间", signalTags: ["relationships", "manual"] },
+      { id: "need-space", label: "我需要空间", signalTags: ["relationships"] },
       { id: "clear-expectations", label: "我需要明确预期", signalTags: ["relationships", "goals"] },
       { id: "slow-reply", label: "我不擅长即时回应", signalTags: ["relationships"] },
       { id: "serious-commitment", label: "我对承诺很认真", signalTags: ["relationships", "goals"] },
       { id: "overthink", label: "我容易想太多", signalTags: ["relationships", "cognition"] },
-      { id: "respect-boundaries", label: "我需要被尊重边界", signalTags: ["relationships", "manual"] },
+      { id: "respect-boundaries", label: "我需要被尊重边界", signalTags: ["relationships"] },
       { id: "warm-up-slowly", label: "我在熟悉后才放松", signalTags: ["relationships"] },
       {
         id: "expression-lag",
         label: "我的表达方式可能和感受不同步",
-        signalTags: ["relationships", "manual"],
+        signalTags: ["relationships"],
       },
     ],
   },
@@ -158,15 +160,15 @@ export const defaultOnboardingQuestions = [
     minSelections: 1,
     writeTargets: ["建议开启的子系统", "当前改善方向"],
     options: [
-      { id: "energy", label: "作息与精力", signalTags: ["energy"] },
+      { id: "energy", label: "作息与精力", signalTags: ["ecosystem"] },
       { id: "procrastination", label: "拖延与行动", signalTags: ["goals"] },
       { id: "money", label: "金钱与消费", signalTags: ["finance"] },
       { id: "relationships", label: "关系与沟通", signalTags: ["relationships"] },
       { id: "mood", label: "情绪稳定", signalTags: ["energy"] },
       { id: "long-term-goals", label: "长期目标", signalTags: ["goals"] },
-      { id: "self-knowledge", label: "自我认知", signalTags: ["cognition", "manual"] },
+      { id: "self-knowledge", label: "自我认知", signalTags: ["cognition"] },
       { id: "learning", label: "学习与成长", signalTags: ["cognition"] },
-      { id: "order", label: "生活秩序", signalTags: ["energy", "cognition"] },
+      { id: "order", label: "生活秩序", signalTags: ["ecosystem", "cognition"] },
     ],
   },
   {
@@ -178,9 +180,9 @@ export const defaultOnboardingQuestions = [
     writeTargets: ["成长方向", "目标系统种子", "财务管理系统入口"],
     options: [
       { id: "stable", label: "更稳定的人", signalTags: ["energy"] },
-      { id: "clear", label: "更清醒的人", signalTags: ["cognition", "manual"] },
+      { id: "clear", label: "更清醒的人", signalTags: ["cognition"] },
       { id: "action", label: "更有行动力的人", signalTags: ["goals"] },
-      { id: "self-care", label: "更会照顾自己的人", signalTags: ["energy"] },
+      { id: "self-care", label: "更会照顾自己的人", signalTags: ["ecosystem"] },
       { id: "relationships", label: "更会处理关系的人", signalTags: ["relationships"] },
       { id: "freedom", label: "更自由的人", signalTags: ["goals"] },
       { id: "creative", label: "更有创造力的人", signalTags: ["cognition"] },
@@ -200,12 +202,12 @@ export const defaultOnboardingQuestions = [
 ] satisfies OnboardingQuestion[];
 
 const reasonEndings: Record<SubsystemId, string> = {
-  energy: "可以先用能量管理系统记录状态、恢复方式和低能量处理方案。",
+  ecosystem: "可以先用个人生态系统观察作息、身体状态和生活环境。",
+  energy: "可以先用能量管理系统记录心理余量、压力信号和恢复方式。",
+  cognition: "可以先用认知管理系统记录注意力、学习和自我观察线索。",
   goals: "可以先用人生目标管理系统整理行动节奏和当前推进方式。",
   relationships: "可以先用人际关系管理系统保存沟通偏好、边界和相处说明。",
   finance: "可以先用财务管理系统观察消费控制、金钱目标和掌控感。",
-  cognition: "可以先用认知管理系统记录注意力、学习和自我观察线索。",
-  manual: "可以先用个人说明书系统继续补全尚未清晰的使用说明。",
 };
 
 export function getQuestionById(
@@ -348,18 +350,6 @@ export function recommendSubsystems(
         optionId: answeredOption.optionId,
       });
       pushUniqueLabel(candidate.sourceLabels, answeredOption.label);
-    }
-  }
-
-  const futureSelfAnswer = getShortTextAnswer(answerRecord);
-
-  if (futureSelfAnswer && !futureSelfAnswer.skipped && futureSelfAnswer.value.trim()) {
-    const manual = scored.get("manual");
-
-    if (manual) {
-      manual.score += 1;
-      pushUniqueRef(manual.sourceAnswerRefs, { questionId: futureSelfAnswer.questionId });
-      pushUniqueLabel(manual.sourceLabels, "给未来自己的备注");
     }
   }
 

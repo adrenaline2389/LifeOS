@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LifeOS v1.0",
-  description: "本地优先的个人说明书控制面板",
+  title: "LifeOS v1.1",
+  description: "本地优先的六系统启动器",
 };
 
 export default function RootLayout({
