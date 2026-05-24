@@ -15,6 +15,7 @@ import {
 import { candidateSubsystems } from "@/features/subsystem-recommendation";
 import type {
   SourceAnswerRef,
+  SubsystemId,
   StartupScanProfile,
   SuggestedSubsystem,
 } from "@/types/lifeos";
@@ -24,6 +25,7 @@ import styles from "./startup-dashboard.module.css";
 export type StartupDashboardProps = {
   profile: StartupScanProfile;
   onResetConfirmed: () => Promise<void>;
+  onOpenSubsystem?: (subsystemId: SubsystemId) => void;
 };
 
 const RESET_TEXT = "RESET";
@@ -31,6 +33,7 @@ const RESET_TEXT = "RESET";
 export function StartupDashboard({
   profile,
   onResetConfirmed,
+  onOpenSubsystem,
 }: StartupDashboardProps) {
   const [resetOpen, setResetOpen] = useState(false);
   const [resetTypedText, setResetTypedText] = useState("");
@@ -61,6 +64,11 @@ export function StartupDashboard({
   function handleSubsystemClick(
     subsystem: SuggestedSubsystem | (typeof candidateSubsystems)[number],
   ) {
+    if (subsystem.id === "ecosystem" && onOpenSubsystem) {
+      onOpenSubsystem(subsystem.id);
+      return;
+    }
+
     setSubsystemMessage(`${subsystem.label} 会在后续版本开放，这里先作为系统入口保留。`);
   }
 
@@ -168,6 +176,7 @@ export function StartupDashboard({
           <span>输入 RESET 确认重置</span>
           <input
             aria-label="输入 RESET 确认重置"
+            className="startup-dashboard-reset-input"
             onChange={(event) => setResetTypedText(event.target.value)}
             value={resetTypedText}
           />

@@ -121,6 +121,14 @@ describe("OnboardingFlow", () => {
     expect(screen.getByText(/请选择至少 1 个选项，可多选。已选择\s+4/)).toBeInTheDocument();
   });
 
+  it("marks the option grid as a three-column desktop grid", () => {
+    const { container } = render(
+      <OnboardingFlow now={fixedNow} onComplete={vi.fn()} />,
+    );
+
+    expect(container.querySelector(".onboarding-option-grid")).toBeInTheDocument();
+  });
+
   it("counts the custom other answer as a valid multi-select answer", async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();

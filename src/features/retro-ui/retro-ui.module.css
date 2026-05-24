@@ -229,10 +229,10 @@
     inset -2px -2px 0 #9a936b;
   display: inline-block;
   flex: 0 0 auto;
-  height: 30px;
+  height: 26px;
   image-rendering: pixelated;
   position: relative;
-  width: 30px;
+  width: 26px;
 }
 
 .macFace span {
@@ -242,52 +242,52 @@
 }
 
 .macFaceEyeLeft {
-  height: 8px;
-  left: 6px;
-  top: 5px;
+  height: 7px;
+  left: 5px;
+  top: 4px;
   width: 3px;
 }
 
 .macFaceEyeRight {
-  height: 8px;
-  right: 6px;
-  top: 5px;
+  height: 7px;
+  right: 5px;
+  top: 4px;
   width: 3px;
 }
 
 .macFaceNose {
-  height: 13px;
-  left: 15px;
-  top: 6px;
+  height: 11px;
+  left: 13px;
+  top: 5px;
   width: 3px;
 }
 
 .macFaceNoseFoot {
   height: 3px;
-  left: 12px;
-  top: 17px;
+  left: 10px;
+  top: 15px;
   width: 6px;
 }
 
 .macFaceMouthLeft {
   height: 4px;
-  left: 6px;
-  top: 22px;
+  left: 5px;
+  top: 19px;
   width: 4px;
 }
 
 .macFaceMouthRight {
   height: 4px;
-  right: 6px;
-  top: 22px;
+  right: 5px;
+  top: 19px;
   width: 4px;
 }
 
 .macFaceMouth {
   height: 3px;
-  left: 10px;
-  top: 26px;
-  width: 12px;
+  left: 9px;
+  top: 22px;
+  width: 10px;
 }
 
 .windowStatusText {
@@ -509,6 +509,37 @@
   width: min(100%, 28rem);
 }
 
+.dialogTitleBar {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 4.25rem;
+  padding: 0.625rem 1rem;
+}
+
+.dialogTitleControls {
+  left: 1rem;
+}
+
+.dialogTitleText {
+  background: linear-gradient(90deg, #e8e4d8, #f8f5eb 48%, #e0ddd1);
+  border: 3px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #b2aa9b;
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  grid-column: 1;
+  justify-self: center;
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin: 0;
+  max-width: calc(100% - 5rem);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.45rem 0.75rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dialogBody {
   background: #f7f7f0;
   line-height: 1.5;
@@ -598,6 +629,21 @@
 
   .titleText {
     max-width: min(58vw, 22rem);
+  }
+
+  .dialogTitleBar {
+    min-height: 3.75rem;
+    padding: 0.5rem;
+  }
+
+  .dialogTitleControls {
+    left: 0.5rem;
+  }
+
+  .dialogTitleText {
+    font-size: 1.125rem;
+    max-width: calc(100% - 3.5rem);
+    padding: 0.35rem 0.5rem;
   }
 
   .dialogActions {

@@ -3,6 +3,10 @@ node_modules
 out
 coverage
 dist
+.vercel
+.turbo
+playwright-report
+test-results
 .DS_Store
 *.log
 *.tsbuildinfo

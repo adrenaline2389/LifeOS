@@ -95,6 +95,7 @@ describe("WindowFrame and Panel", () => {
     ).toHaveClass("retro-ui-window-frame");
     expect(container.querySelectorAll(".retro-ui-title-control")).toHaveLength(3);
     expect(container.querySelector(".retro-ui-mac-face")).toBeInTheDocument();
+    expect(container.querySelector(".retro-ui-mac-face-mouth")).toBeInTheDocument();
     expect(
       screen.getByRole("region", { name: "待验证观察" }),
     ).toHaveClass("retro-ui-panel");
@@ -258,6 +259,9 @@ describe("Dialog", () => {
 
     expect(screen.getByRole("dialog", { name: "重置 LifeOS？" })).toHaveClass(
       "retro-ui-dialog",
+    );
+    expect(screen.getByRole("heading", { name: "重置 LifeOS？" })).toHaveClass(
+      "retro-ui-dialog-title",
     );
     expect(screen.getByText("这会清空本地数据。")).toBeInTheDocument();
 

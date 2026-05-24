@@ -112,7 +112,9 @@ export function WindowFrame({
             <span className={styles.macFaceNoseFoot} />
             <span className={styles.macFaceMouthLeft} />
             <span className={styles.macFaceMouthRight} />
-            <span className={styles.macFaceMouth} />
+            <span
+              className={cx("retro-ui-mac-face-mouth", styles.macFaceMouth)}
+            />
           </span>
           <span className={styles.windowStatusText}>{statusBar}</span>
         </div>
@@ -341,14 +343,19 @@ export function Dialog({
         role="dialog"
         {...dialogProps}
       >
-        <div className={styles.titleBar}>
-          <div aria-hidden="true" className={styles.titleControls}>
+        <div className={cx(styles.titleBar, styles.dialogTitleBar)}>
+          <div
+            aria-hidden="true"
+            className={cx(styles.titleControls, styles.dialogTitleControls)}
+          >
             <span className={styles.titleControl} />
           </div>
-          <h2 className={styles.titleText} id={titleId}>
+          <h2
+            className={cx("retro-ui-dialog-title", styles.dialogTitleText)}
+            id={titleId}
+          >
             {title}
           </h2>
-          <div />
         </div>
         <div className={styles.dialogBody}>{children}</div>
         <div className={styles.dialogActions}>

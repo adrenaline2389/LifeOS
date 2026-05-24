@@ -83,3 +83,47 @@ export type StartupScanProfile = {
   scanClues: StartupScanClue[];
   suggestedSubsystems: SuggestedSubsystem[];
 };
+
+export type EcosystemInternalScore = -3 | -2 | -1 | 0 | 1 | 2 | 3;
+
+export type EcosystemDimensionId =
+  | "sleepRecovery"
+  | "dailyRhythm"
+  | "bodyState"
+  | "foodWater"
+  | "activityStretch"
+  | "environmentSupport";
+
+export type EcosystemSemanticValue = {
+  id: string;
+  label: string;
+  internalScore: EcosystemInternalScore;
+};
+
+export type EcosystemDimensionDefinition = {
+  id: EcosystemDimensionId;
+  label: string;
+  description: string;
+  values: EcosystemSemanticValue[];
+};
+
+export type EcosystemObservation = {
+  id: string;
+  dimensionId: EcosystemDimensionId;
+  valueId: string;
+  valueLabel: string;
+  internalScore: EcosystemInternalScore;
+  observedAt: string;
+  note?: string;
+};
+
+export type EcosystemBarometerRange = "1d" | "7d" | "15d" | "30d";
+
+export type EcosystemDimensionSummary = {
+  dimensionId: EcosystemDimensionId;
+  observationCount: number;
+  averageInternalScore: number | null;
+  lowObservationCount: number;
+  latestObservation: EcosystemObservation | null;
+  summaryLabel: string | null;
+};

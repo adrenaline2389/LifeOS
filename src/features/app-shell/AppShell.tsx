@@ -4,17 +4,23 @@ import { useEffect, useState } from "react";
 
 import {
   clearLifeOSLocalData,
+  deleteEcosystemObservation,
   lifeOSLocalDatabase,
+  readEcosystemObservations,
   readLifeOSLocalData,
   saveOnboardingAnswerRecord,
+  saveEcosystemObservation,
   saveStartupScanProfile,
 } from "@/features/local-data";
 import { OnboardingFlow } from "@/features/onboarding";
+import { PersonalEcosystemPanel } from "@/features/personal-ecosystem";
 import { StartupScreen, WindowFrame } from "@/features/retro-ui";
 import { StartupDashboard } from "@/features/startup-dashboard";
 import { generateStartupScanProfile } from "@/features/startup-scan-generation";
 import type {
+  EcosystemObservation,
   OnboardingAnswerRecord,
+  SubsystemId,
   StartupScanProfile,
 } from "@/types/lifeos";
 
@@ -27,12 +33,20 @@ export type AppShellDataSnapshot = {
 
 export type AppShellDataAdapter = {
   read: () => Promise<AppShellDataSnapshot>;
+  readEcosystemObservations: () => Promise<EcosystemObservation[]>;
+  deleteEcosystemObservation: (observationId: string) => Promise<void>;
   saveOnboardingAnswer: (record: OnboardingAnswerRecord) => Promise<void>;
+  saveEcosystemObservation: (observation: EcosystemObservation) => Promise<void>;
   saveStartupScanProfile: (profile: StartupScanProfile) => Promise<void>;
   clear: () => Promise<void>;
 };
 
-export type AppShellMode = "loading" | "startup" | "onboarding" | "dashboard";
+export type AppShellMode =
+  | "loading"
+  | "startup"
+  | "onboarding"
+  | "dashboard"
+  | "personal-ecosystem";
 
 export type AppShellProps = {
   dataAdapter?: AppShellDataAdapter;
@@ -42,8 +56,13 @@ export type AppShellProps = {
 
 const defaultDataAdapter: AppShellDataAdapter = {
   read: () => readLifeOSLocalData(lifeOSLocalDatabase),
+  readEcosystemObservations: () => readEcosystemObservations(lifeOSLocalDatabase),
+  deleteEcosystemObservation: (observationId) =>
+    deleteEcosystemObservation(lifeOSLocalDatabase, observationId),
   saveOnboardingAnswer: (record) =>
     saveOnboardingAnswerRecord(lifeOSLocalDatabase, record),
+  saveEcosystemObservation: (observation) =>
+    saveEcosystemObservation(lifeOSLocalDatabase, observation),
   saveStartupScanProfile: (profile) =>
     saveStartupScanProfile(lifeOSLocalDatabase, profile),
   clear: () => clearLifeOSLocalData(lifeOSLocalDatabase),
@@ -57,6 +76,9 @@ export function AppShell({
   const [mode, setMode] = useState<AppShellMode>(initialMode ?? "loading");
   const [startupScanProfile, setStartupScanProfile] =
     useState<StartupScanProfile | null>(null);
+  const [ecosystemObservations, setEcosystemObservations] = useState<
+    EcosystemObservation[]
+  >([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -102,7 +124,28 @@ export function AppShell({
   async function handleReset() {
     await dataAdapter.clear();
     setStartupScanProfile(null);
+    setEcosystemObservations([]);
     setMode("startup");
+  }
+
+  async function handleOpenSubsystem(subsystemId: SubsystemId) {
+    if (subsystemId !== "ecosystem") {
+      return;
+    }
+
+    const observations = await dataAdapter.readEcosystemObservations();
+    setEcosystemObservations(observations);
+    setMode("personal-ecosystem");
+  }
+
+  async function handleSaveEcosystemObservation(
+    observation: EcosystemObservation,
+  ) {
+    await dataAdapter.saveEcosystemObservation(observation);
+  }
+
+  async function handleDeleteEcosystemObservation(observationId: string) {
+    await dataAdapter.deleteEcosystemObservation(observationId);
   }
 
   return (
@@ -112,7 +155,7 @@ export function AppShell({
           <StartupScreen
             status="正在读取个人档案..."
             subtitle="请稍候，本地小电脑正在检查 IndexedDB。"
-            title="LifeOS v1.1"
+            title="LifeOS v1.2"
           />
         ) : null}
 
@@ -137,8 +180,18 @@ export function AppShell({
 
         {mode === "dashboard" && startupScanProfile ? (
           <StartupDashboard
+            onOpenSubsystem={handleOpenSubsystem}
             onResetConfirmed={handleReset}
             profile={startupScanProfile}
+          />
+        ) : null}
+
+        {mode === "personal-ecosystem" ? (
+          <PersonalEcosystemPanel
+            observations={ecosystemObservations}
+            onBack={() => setMode("dashboard")}
+            onDeleteObservation={handleDeleteEcosystemObservation}
+            onSaveObservation={handleSaveEcosystemObservation}
           />
         ) : null}
       </div>

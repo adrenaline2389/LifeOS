@@ -87,11 +87,40 @@ describe("StartupDashboard", () => {
     await user.click(screen.getByRole("button", { name: "重置本地数据" }));
     await user.click(screen.getByRole("button", { name: "确认重置" }));
 
+    expect(screen.getByRole("heading", { name: "重置本地 LifeOS 数据" })).toHaveClass(
+      "retro-ui-dialog-title",
+    );
+    expect(screen.getByLabelText("输入 RESET 确认重置")).toHaveClass(
+      "startup-dashboard-reset-input",
+    );
     expect(onResetConfirmed).not.toHaveBeenCalled();
 
     await user.type(screen.getByLabelText("输入 RESET 确认重置"), "RESET");
     await user.click(screen.getByRole("button", { name: "确认重置" }));
 
     expect(onResetConfirmed).toHaveBeenCalledOnce();
+  });
+
+  it("opens the personal ecosystem entry and keeps other subsystems as later entries", async () => {
+    const user = userEvent.setup();
+    const onOpenSubsystem = vi.fn();
+
+    render(
+      <StartupDashboard
+        onOpenSubsystem={onOpenSubsystem}
+        onResetConfirmed={vi.fn()}
+        profile={profile}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "查看系统入口" }));
+
+    expect(onOpenSubsystem).toHaveBeenCalledWith("ecosystem");
+
+    await user.click(screen.getAllByRole("button", { name: "查看" })[1]);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "能量管理系统 会在后续版本开放",
+    );
   });
 });

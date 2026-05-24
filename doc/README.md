@@ -18,6 +18,10 @@ doc/
     design.md
     prompt.md
     tasks/
+  v1.2/
+    design.md
+    prompt.md
+    tasks/
   roadmap/
   decisions/
 ```
@@ -28,10 +32,10 @@ doc/
 
 当前版本的主要入口：
 
-- 产品与技术设计：`doc/v1.1/design.md`
-- Agent 实现提示词：`doc/v1.1/prompt.md`
-- 模块任务拆分：`doc/v1.1/tasks/`
-- 模块完成进度：`doc/v1.1/tasks/progress.md`
+- 产品与技术设计：`doc/v1.2/design.md`
+- Agent 实现提示词：`doc/v1.2/prompt.md`
+- 模块任务拆分：`doc/v1.2/tasks/`
+- 模块完成进度：`doc/v1.2/tasks/progress.md`
 
 ## 版本目录
 
@@ -51,7 +55,7 @@ doc/
 
 适合放在这里的内容：
 
-- v1.1 / v2.0 的候选功能。
+- v1.3 / v2.0 的候选功能。
 - 尚未决定是否进入正式版本的想法。
 - 需要进一步验证的产品方向。
 - 暂时不能放进当前版本范围的需求。

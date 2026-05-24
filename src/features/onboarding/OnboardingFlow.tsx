@@ -225,7 +225,7 @@ export function OnboardingFlow({
               ((currentAnswer.customText ?? "").trim().length > 0 ? 1 : 0)}
           </p>
 
-          <div className={styles.optionGrid}>
+          <div className={`onboarding-option-grid ${styles.optionGrid}`}>
             {currentQuestion.options.map((option) => (
               <label key={option.id} className={styles.option}>
                 <input

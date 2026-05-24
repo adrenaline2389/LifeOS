@@ -1,0 +1,88 @@
+import type { EcosystemDimensionDefinition } from "@/types/lifeos";
+
+export const ECOSYSTEM_DIMENSIONS = [
+  {
+    id: "sleepRecovery",
+    label: "睡眠恢复",
+    description: "睡眠对今天有没有形成支撑。",
+    values: [
+      { id: "very-restorative", label: "很恢复", internalScore: 3 },
+      { id: "enough", label: "够用", internalScore: 2 },
+      { id: "barely-enough", label: "勉强够", internalScore: 1 },
+      { id: "fragmented", label: "断续", internalScore: 0 },
+      { id: "short", label: "偏少", internalScore: -1 },
+      { id: "poor", label: "很差", internalScore: -2 },
+      { id: "almost-none", label: "几乎没睡", internalScore: -3 },
+    ],
+  },
+  {
+    id: "dailyRhythm",
+    label: "作息节律",
+    description: "一天的结构是否稳定在轨。",
+    values: [
+      { id: "smooth", label: "顺畅", internalScore: 3 },
+      { id: "stable", label: "稳定", internalScore: 2 },
+      { id: "mostly-on-track", label: "基本在轨", internalScore: 1 },
+      { id: "scattered", label: "有点散", internalScore: 0 },
+      { id: "interrupted", label: "被打断", internalScore: -1 },
+      { id: "chaotic", label: "很混乱", internalScore: -2 },
+      { id: "reversed", label: "昼夜反转", internalScore: -3 },
+    ],
+  },
+  {
+    id: "bodyState",
+    label: "身体状态",
+    description: "身体当下是否轻松、可用或拖累运行。",
+    values: [
+      { id: "light", label: "轻盈", internalScore: 3 },
+      { id: "steady", label: "稳定", internalScore: 2 },
+      { id: "usable", label: "可用", internalScore: 1 },
+      { id: "heavy", label: "有点沉", internalScore: 0 },
+      { id: "tired", label: "疲惫", internalScore: -1 },
+      { id: "tense", label: "紧绷", internalScore: -2 },
+      { id: "unwell", label: "不适", internalScore: -3 },
+    ],
+  },
+  {
+    id: "foodWater",
+    label: "饮食饮水",
+    description: "基本补给是否稳定。",
+    values: [
+      { id: "very-stable", label: "很稳定", internalScore: 3 },
+      { id: "mostly-stable", label: "基本稳定", internalScore: 2 },
+      { id: "okay", label: "还可以", internalScore: 1 },
+      { id: "messy", label: "有点乱", internalScore: 0 },
+      { id: "too-little", label: "偏少", internalScore: -1 },
+      { id: "imbalanced", label: "过量或失衡", internalScore: -2 },
+      { id: "forgotten", label: "忘了照顾", internalScore: -3 },
+    ],
+  },
+  {
+    id: "activityStretch",
+    label: "活动舒展",
+    description: "身体是否被使用、走动和舒展开。",
+    values: [
+      { id: "very-open", label: "很舒展", internalScore: 3 },
+      { id: "active", label: "有活动", internalScore: 2 },
+      { id: "moved", label: "走动过", internalScore: 1 },
+      { id: "ordinary", label: "普通", internalScore: 0 },
+      { id: "sedentary", label: "久坐", internalScore: -1 },
+      { id: "stuck", label: "僵住", internalScore: -2 },
+      { id: "overdrawn", label: "透支", internalScore: -3 },
+    ],
+  },
+  {
+    id: "environmentSupport",
+    label: "环境支撑",
+    description: "房间、桌面和周围环境是否支撑运行。",
+    values: [
+      { id: "clear", label: "清爽", internalScore: 3 },
+      { id: "comfortable", label: "舒服", internalScore: 2 },
+      { id: "acceptable", label: "可接受", internalScore: 1 },
+      { id: "slightly-messy", label: "有点乱", internalScore: 0 },
+      { id: "distracting", label: "分心", internalScore: -1 },
+      { id: "dragging", label: "拖累", internalScore: -2 },
+      { id: "pressing", label: "压迫感", internalScore: -3 },
+    ],
+  },
+] satisfies EcosystemDimensionDefinition[];

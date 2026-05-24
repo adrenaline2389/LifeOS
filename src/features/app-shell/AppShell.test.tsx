@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type {
+  EcosystemObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
 } from "@/types/lifeos";
@@ -91,10 +92,14 @@ function createAdapter(
     onboardingAnswer: OnboardingAnswerRecord | null;
     startupScanProfile: StartupScanProfile | null;
   },
+  ecosystemObservations: EcosystemObservation[] = [],
 ): AppShellDataAdapter {
   return {
     read: vi.fn().mockResolvedValue(snapshot),
+    readEcosystemObservations: vi.fn().mockResolvedValue(ecosystemObservations),
+    deleteEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     saveOnboardingAnswer: vi.fn().mockResolvedValue(undefined),
+    saveEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     saveStartupScanProfile: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
@@ -128,6 +133,40 @@ describe("AppShell", () => {
     );
 
     expect(await screen.findByText("LifeOS 启动面板")).toBeInTheDocument();
+  });
+
+  it("opens and returns from the personal ecosystem subsystem", async () => {
+    const user = userEvent.setup();
+    const adapter = createAdapter(
+      {
+        onboardingAnswer: completedAnswer,
+        startupScanProfile,
+      },
+      [
+        {
+          id: "sleep-today",
+          dimensionId: "sleepRecovery",
+          valueId: "enough",
+          valueLabel: "够用",
+          internalScore: 2,
+          observedAt: "2026-05-18T08:30:00.000",
+        },
+      ],
+    );
+
+    render(<AppShell dataAdapter={adapter} />);
+
+    expect(await screen.findByText("LifeOS 启动面板")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "查看系统入口" }));
+
+    expect(await screen.findByText("个人生态系统")).toBeInTheDocument();
+    expect(screen.getByText("生理基础与生活环境")).toBeInTheDocument();
+    expect(adapter.readEcosystemObservations).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole("button", { name: "返回启动面板" }));
+
+    expect(screen.getByText("LifeOS 启动面板")).toBeInTheDocument();
   });
 
   it("saves onboarding output and returns to first-run after reset", async () => {

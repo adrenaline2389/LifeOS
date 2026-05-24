@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import type {
+  EcosystemObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
 } from "@/types/lifeos";
@@ -20,14 +21,24 @@ type StoredStartupScanProfile = {
   updatedAt: string;
 };
 
+type StoredEcosystemObservation = EcosystemObservation & {
+  updatedAt: string;
+};
+
 export type LifeOSLocalDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
   startupScanProfile: StartupScanProfile | null;
 };
 
+export type EcosystemObservationRange = {
+  from?: string;
+  to?: string;
+};
+
 export class LifeOSLocalDatabase extends Dexie {
   onboardingAnswers!: Table<StoredOnboardingAnswerRecord, string>;
   startupScanProfiles!: Table<StoredStartupScanProfile, string>;
+  ecosystemObservations!: Table<StoredEcosystemObservation, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -40,6 +51,11 @@ export class LifeOSLocalDatabase extends Dexie {
       onboardingAnswers: "id, updatedAt",
       manualProfiles: null,
       startupScanProfiles: "id, updatedAt",
+    });
+    this.version(3).stores({
+      onboardingAnswers: "id, updatedAt",
+      startupScanProfiles: "id, updatedAt",
+      ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
     });
   }
 }
@@ -88,6 +104,54 @@ export const readStartupScanProfile = async (
   return storedProfile?.value ?? null;
 };
 
+export const saveEcosystemObservation = async (
+  database: LifeOSLocalDatabase,
+  observation: EcosystemObservation,
+): Promise<void> => {
+  await database.ecosystemObservations.put({
+    ...observation,
+    updatedAt: currentTimestamp(),
+  });
+};
+
+export const deleteEcosystemObservation = async (
+  database: LifeOSLocalDatabase,
+  observationId: string,
+): Promise<void> => {
+  await database.ecosystemObservations.delete(observationId);
+};
+
+export const readEcosystemObservations = async (
+  database: LifeOSLocalDatabase,
+  range: EcosystemObservationRange = {},
+): Promise<EcosystemObservation[]> => {
+  const observations = await database.ecosystemObservations
+    .orderBy("observedAt")
+    .toArray();
+
+  return observations
+    .filter((observation) => {
+      if (range.from && observation.observedAt < range.from) {
+        return false;
+      }
+
+      if (range.to && observation.observedAt >= range.to) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((observation) => ({
+      id: observation.id,
+      dimensionId: observation.dimensionId,
+      valueId: observation.valueId,
+      valueLabel: observation.valueLabel,
+      internalScore: observation.internalScore,
+      observedAt: observation.observedAt,
+      ...(observation.note ? { note: observation.note } : {}),
+    }));
+};
+
 export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
@@ -102,9 +166,11 @@ export const clearLifeOSLocalData = async (
     "rw",
     database.onboardingAnswers,
     database.startupScanProfiles,
+    database.ecosystemObservations,
     async () => {
       await database.onboardingAnswers.clear();
       await database.startupScanProfiles.clear();
+      await database.ecosystemObservations.clear();
     },
   );
 };
