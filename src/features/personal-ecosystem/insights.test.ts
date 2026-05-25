@@ -146,4 +146,22 @@ describe("personal ecosystem insights", () => {
       )?.observationCount,
     ).toBe(3);
   });
+
+  it("treats the 1 day barometer range as the last 24 hours across midnight", () => {
+    const afterMidnight = new Date(2026, 4, 19, 0, 10, 0);
+    const summaries = buildEcosystemBarometer(
+      [
+        observation("before-midnight", "sleepRecovery", "够用", 2, "2026-05-18T23:50:00.000"),
+        observation("too-old", "sleepRecovery", "偏少", -1, "2026-05-17T23:50:00.000"),
+      ],
+      "1d",
+      afterMidnight,
+    );
+
+    expect(summaries.find((summary) => summary.dimensionId === "sleepRecovery")).toMatchObject({
+      observationCount: 1,
+      latestObservation: expect.objectContaining({ id: "before-midnight" }),
+      summaryLabel: "够用",
+    });
+  });
 });

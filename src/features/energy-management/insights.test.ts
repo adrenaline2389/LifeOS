@@ -42,9 +42,10 @@ describe("energy management insights", () => {
     expect(today.from.getHours()).toBe(0);
     expect(today.to.getDate()).toBe(19);
     expect(today.to.getHours()).toBe(0);
-    expect(sevenDays.from.getDate()).toBe(12);
-    expect(sevenDays.from.getHours()).toBe(0);
-    expect(sevenDays.to.getTime()).toBe(today.to.getTime());
+    expect(sevenDays.from.getDate()).toBe(11);
+    expect(sevenDays.from.getHours()).toBe(16);
+    expect(sevenDays.from.getMinutes()).toBe(30);
+    expect(sevenDays.to.getTime()).toBe(now.getTime());
   });
 
   it("builds current state for observed today, stale, and never observed dimensions", () => {
@@ -150,5 +151,23 @@ describe("energy management insights", () => {
         (summary) => summary.dimensionId === "attentionBandwidth",
       )?.observationCount,
     ).toBe(3);
+  });
+
+  it("treats the 1 day compass range as the last 24 hours across midnight", () => {
+    const afterMidnight = new Date(2026, 4, 19, 0, 10, 0);
+    const summaries = buildEnergyCompass(
+      [
+        observation("before-midnight", "currentCapacity", "有余量", 2, "2026-05-18T23:50:00.000"),
+        observation("too-old", "currentCapacity", "偏低", -1, "2026-05-17T23:50:00.000"),
+      ],
+      "1d",
+      afterMidnight,
+    );
+
+    expect(summaries.find((summary) => summary.dimensionId === "currentCapacity")).toMatchObject({
+      observationCount: 1,
+      latestObservation: expect.objectContaining({ id: "before-midnight" }),
+      summaryLabel: "有余量",
+    });
   });
 });

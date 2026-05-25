@@ -47,13 +47,13 @@ export function getBarometerDateRange(
   range: EcosystemBarometerRange,
   date: Date = new Date(),
 ): LocalDateRange {
-  const today = getLocalDayRange(date);
-  const from = new Date(today.from);
-  from.setDate(from.getDate() - (RANGE_DAYS[range] - 1));
+  const to = new Date(date);
+  const from = new Date(to);
+  from.setDate(from.getDate() - RANGE_DAYS[range]);
 
   return {
     from,
-    to: today.to,
+    to,
   };
 }
 
