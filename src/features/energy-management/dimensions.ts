@@ -1,0 +1,88 @@
+import type { EnergyDimensionDefinition } from "@/types/lifeos";
+
+export const ENERGY_DIMENSIONS = [
+  {
+    id: "currentCapacity",
+    label: "当前余量",
+    description: "我现在还有多少心理和行动电量。",
+    values: [
+      { id: "very-full", label: "很充足", internalScore: 3 },
+      { id: "spacious", label: "有余量", internalScore: 2 },
+      { id: "enough", label: "够用", internalScore: 1 },
+      { id: "barely-usable", label: "勉强可用", internalScore: 0 },
+      { id: "low", label: "偏低", internalScore: -1 },
+      { id: "near-empty", label: "快见底", internalScore: -2 },
+      { id: "overdrawn", label: "已透支", internalScore: -3 },
+    ],
+  },
+  {
+    id: "pressureLoad",
+    label: "压力负载",
+    description: "我现在背着的压力重不重。",
+    values: [
+      { id: "very-light", label: "很轻", internalScore: 3 },
+      { id: "bearable", label: "可承载", internalScore: 2 },
+      { id: "slight-pressure", label: "稍有压力", internalScore: 1 },
+      { id: "somewhat-full", label: "有点满", internalScore: 0 },
+      { id: "heavy", label: "偏重", internalScore: -1 },
+      { id: "very-heavy", label: "很重", internalScore: -2 },
+      { id: "overloaded", label: "过载", internalScore: -3 },
+    ],
+  },
+  {
+    id: "emotionalWeather",
+    label: "情绪天气",
+    description: "我的内在气候如何。",
+    values: [
+      { id: "bright", label: "明亮", internalScore: 3 },
+      { id: "steady", label: "平稳", internalScore: 2 },
+      { id: "soft", label: "柔和", internalScore: 1 },
+      { id: "changeable", label: "阴晴不定", internalScore: 0 },
+      { id: "sensitive", label: "敏感", internalScore: -1 },
+      { id: "low", label: "低沉", internalScore: -2 },
+      { id: "numb-or-out-of-control", label: "麻木/失控", internalScore: -3 },
+    ],
+  },
+  {
+    id: "attentionBandwidth",
+    label: "注意带宽",
+    description: "我现在的脑内空间和处理能力够不够。",
+    values: [
+      { id: "clear-and-spacious", label: "清晰宽裕", internalScore: 3 },
+      { id: "focused", label: "能聚焦", internalScore: 2 },
+      { id: "online", label: "基本在线", internalScore: 1 },
+      { id: "scattered", label: "有点散", internalScore: 0 },
+      { id: "distractible", label: "容易分心", internalScore: -1 },
+      { id: "hard-to-process", label: "很难处理", internalScore: -2 },
+      { id: "brain-offline", label: "大脑宕机", internalScore: -3 },
+    ],
+  },
+  {
+    id: "socialBattery",
+    label: "社交电量",
+    description: "我现在能不能和人互动，需要多少边界。",
+    values: [
+      { id: "want-connection", label: "想连接", internalScore: 3 },
+      { id: "can-talk", label: "可以交流", internalScore: 2 },
+      { id: "small-amount-available", label: "少量可用", internalScore: 1 },
+      { id: "depends", label: "看情况", internalScore: 0 },
+      { id: "need-boundaries", label: "需要边界", internalScore: -1 },
+      { id: "do-not-want-to-talk", label: "不想说话", internalScore: -2 },
+      { id: "closed-off", label: "完全封闭", internalScore: -3 },
+    ],
+  },
+  {
+    id: "actionResistance",
+    label: "行动阻力",
+    description: "我想行动时顺不顺，有没有启动困难或抗拒。",
+    values: [
+      { id: "very-smooth", label: "很顺手", internalScore: 3 },
+      { id: "can-start", label: "可以启动", internalScore: 2 },
+      { id: "slowly-moving", label: "慢慢能动", internalScore: 1 },
+      { id: "stuck-a-bit", label: "有点卡", internalScore: 0 },
+      { id: "hard-to-start", label: "难启动", internalScore: -1 },
+      { id: "resistant", label: "抗拒", internalScore: -2 },
+      { id: "stopped", label: "停摆", internalScore: -3 },
+    ],
+  },
+] satisfies EnergyDimensionDefinition[];

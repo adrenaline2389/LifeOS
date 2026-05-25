@@ -1,6 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
   EcosystemObservation,
+  EnergyObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
 } from "@/types/lifeos";
@@ -25,6 +26,10 @@ type StoredEcosystemObservation = EcosystemObservation & {
   updatedAt: string;
 };
 
+type StoredEnergyObservation = EnergyObservation & {
+  updatedAt: string;
+};
+
 export type LifeOSLocalDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
   startupScanProfile: StartupScanProfile | null;
@@ -35,10 +40,16 @@ export type EcosystemObservationRange = {
   to?: string;
 };
 
+export type EnergyObservationRange = {
+  from?: string;
+  to?: string;
+};
+
 export class LifeOSLocalDatabase extends Dexie {
   onboardingAnswers!: Table<StoredOnboardingAnswerRecord, string>;
   startupScanProfiles!: Table<StoredStartupScanProfile, string>;
   ecosystemObservations!: Table<StoredEcosystemObservation, string>;
+  energyObservations!: Table<StoredEnergyObservation, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -56,6 +67,12 @@ export class LifeOSLocalDatabase extends Dexie {
       onboardingAnswers: "id, updatedAt",
       startupScanProfiles: "id, updatedAt",
       ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
+    });
+    this.version(4).stores({
+      onboardingAnswers: "id, updatedAt",
+      startupScanProfiles: "id, updatedAt",
+      ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
+      energyObservations: "id, observedAt, dimensionId, updatedAt",
     });
   }
 }
@@ -152,6 +169,54 @@ export const readEcosystemObservations = async (
     }));
 };
 
+export const saveEnergyObservation = async (
+  database: LifeOSLocalDatabase,
+  observation: EnergyObservation,
+): Promise<void> => {
+  await database.energyObservations.put({
+    ...observation,
+    updatedAt: currentTimestamp(),
+  });
+};
+
+export const deleteEnergyObservation = async (
+  database: LifeOSLocalDatabase,
+  observationId: string,
+): Promise<void> => {
+  await database.energyObservations.delete(observationId);
+};
+
+export const readEnergyObservations = async (
+  database: LifeOSLocalDatabase,
+  range: EnergyObservationRange = {},
+): Promise<EnergyObservation[]> => {
+  const observations = await database.energyObservations
+    .orderBy("observedAt")
+    .toArray();
+
+  return observations
+    .filter((observation) => {
+      if (range.from && observation.observedAt < range.from) {
+        return false;
+      }
+
+      if (range.to && observation.observedAt >= range.to) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((observation) => ({
+      id: observation.id,
+      dimensionId: observation.dimensionId,
+      valueId: observation.valueId,
+      valueLabel: observation.valueLabel,
+      internalScore: observation.internalScore,
+      observedAt: observation.observedAt,
+      ...(observation.note ? { note: observation.note } : {}),
+    }));
+};
+
 export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
@@ -167,10 +232,12 @@ export const clearLifeOSLocalData = async (
     database.onboardingAnswers,
     database.startupScanProfiles,
     database.ecosystemObservations,
+    database.energyObservations,
     async () => {
       await database.onboardingAnswers.clear();
       await database.startupScanProfiles.clear();
       await database.ecosystemObservations.clear();
+      await database.energyObservations.clear();
     },
   );
 };

@@ -1,0 +1,256 @@
+.layout {
+  display: grid;
+  gap: 1.125rem;
+}
+
+.header {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(17, 17, 17, 0.1) 0,
+      rgba(17, 17, 17, 0.1) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    #fffdf2;
+  border: 2px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #8a8a82,
+    3px 3px 0 #222222;
+  padding: 0.75rem 1rem;
+}
+
+.header p {
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.dimensionGrid,
+.timelineList,
+.compassList {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dimensionGrid {
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.dimensionCard,
+.timelineList > li,
+.compassList > li,
+.recordPanel {
+  background:
+    linear-gradient(#fffdf2, #f6f4eb) padding-box,
+    repeating-linear-gradient(
+      0deg,
+      #111111 0,
+      #111111 2px,
+      transparent 2px,
+      transparent 5px
+    );
+  border: 3px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #8a8a82,
+    4px 4px 0 #2a2a2a;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.875rem;
+}
+
+.dimensionHeader,
+.recordHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.dimensionHeader p,
+.currentValue,
+.emptyValue,
+.timelineList p,
+.compassList p,
+.rangeSummary {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.currentValue {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.currentValue span,
+.emptyValue {
+  color: #4a4a44;
+}
+
+.rangeControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.valueAxis {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #ededdf 0,
+      #ededdf 4px,
+      #f9f7ef 4px,
+      #f9f7ef 8px
+    );
+  border: 2px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #8a8a82,
+    inset -2px -2px 0 #ffffff;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.axisEnds {
+  color: #3f3f39;
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 700;
+  justify-content: space-between;
+  line-height: 1.2;
+}
+
+.axisTrack {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-width: 0;
+  padding-top: 0.875rem;
+  position: relative;
+}
+
+.axisTrack::before {
+  background: #111111;
+  box-shadow: 0 2px 0 #ffffff;
+  content: "";
+  height: 3px;
+  left: calc(100% / 14);
+  position: absolute;
+  right: calc(100% / 14);
+  top: 1.5rem;
+}
+
+.axisStop {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #111111;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 0.5rem;
+  justify-items: center;
+  min-width: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.axisStop:focus-visible {
+  outline: 2px dotted #111111;
+  outline-offset: 5px;
+}
+
+.axisKnob {
+  background: linear-gradient(180deg, #ffffff 0%, #dad8ca 54%, #aaa69b 100%);
+  border: 2px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #6d695f,
+    2px 2px 0 #111111;
+  display: block;
+  height: 1.55rem;
+  width: 1.55rem;
+}
+
+.axisStop:hover .axisKnob {
+  background: #ffffff;
+}
+
+.axisStop:active .axisKnob {
+  box-shadow:
+    inset 2px 2px 0 #6d695f,
+    inset -2px -2px 0 #ffffff;
+  transform: translate(1px, 1px);
+}
+
+.axisLabel {
+  align-items: center;
+  background: #fffdf2;
+  border: 1px solid #111111;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #aaa69b;
+  display: flex;
+  font-size: 0.68rem;
+  justify-content: center;
+  line-height: 1.15;
+  min-height: 2.15rem;
+  overflow-wrap: anywhere;
+  padding: 0.25rem 0.125rem;
+  text-align: center;
+  width: 100%;
+}
+
+.observationPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.observationPills li {
+  background: #fffdf2;
+  border: 2px solid #111111;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #aaa69b;
+  display: inline-flex;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+}
+
+@media (max-width: 520px) {
+  .dimensionCard,
+  .timelineList > li,
+  .compassList > li,
+  .recordPanel {
+    padding: 0.625rem;
+  }
+
+  .valueAxis {
+    padding: 0.5rem;
+  }
+
+  .axisEnds {
+    font-size: 0.62rem;
+  }
+
+  .axisLabel {
+    font-size: 0.56rem;
+    min-height: 2.4rem;
+    padding-inline: 0;
+  }
+
+  .axisKnob {
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+
+  .axisTrack::before {
+    top: 1.375rem;
+  }
+}

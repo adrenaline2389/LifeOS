@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type {
   EcosystemObservation,
+  EnergyObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
 } from "@/types/lifeos";
@@ -8,11 +9,14 @@ import {
   clearLifeOSLocalData,
   createLifeOSLocalDatabase,
   deleteEcosystemObservation,
+  deleteEnergyObservation,
   readEcosystemObservations,
+  readEnergyObservations,
   readLifeOSLocalData,
   readOnboardingAnswerRecord,
   readStartupScanProfile,
   saveEcosystemObservation,
+  saveEnergyObservation,
   saveOnboardingAnswerRecord,
   saveStartupScanProfile,
 } from "./index";
@@ -93,6 +97,18 @@ const ecosystemObservation = (
   ...overrides,
 });
 
+const energyObservation = (
+  overrides: Partial<EnergyObservation> = {},
+): EnergyObservation => ({
+  id: "energy-observation-1",
+  dimensionId: "currentCapacity",
+  valueId: "enough",
+  valueLabel: "有余量",
+  internalScore: 2,
+  observedAt: "2026-05-18T09:00:00.000Z",
+  ...overrides,
+});
+
 describe("LifeOS local data storage", () => {
   it("returns an empty local data snapshot before anything is saved", async () => {
     const database = createTestDatabase();
@@ -130,6 +146,7 @@ describe("LifeOS local data storage", () => {
     await saveOnboardingAnswerRecord(database, onboardingAnswerRecord);
     await saveStartupScanProfile(database, startupScanProfile);
     await saveEcosystemObservation(database, ecosystemObservation());
+    await saveEnergyObservation(database, energyObservation());
 
     await clearLifeOSLocalData(database);
 
@@ -138,6 +155,7 @@ describe("LifeOS local data storage", () => {
       startupScanProfile: null,
     });
     await expect(readEcosystemObservations(database)).resolves.toEqual([]);
+    await expect(readEnergyObservations(database)).resolves.toEqual([]);
   });
 
   it("saves ecosystem observations with semantic snapshots", async () => {
@@ -251,5 +269,143 @@ describe("LifeOS local data storage", () => {
       onboardingAnswer: null,
       startupScanProfile: null,
     });
+  });
+
+  it("saves energy observations with semantic snapshots", async () => {
+    const database = createTestDatabase();
+    const observation = energyObservation({
+      valueLabel: "大脑宕机",
+      internalScore: -3,
+      note: "会议之后有点转不动。",
+    });
+
+    await saveEnergyObservation(database, observation);
+
+    await expect(readEnergyObservations(database)).resolves.toEqual([
+      observation,
+    ]);
+  });
+
+  it("overwrites an energy observation when the same id is saved again", async () => {
+    const database = createTestDatabase();
+    const firstObservation = energyObservation({
+      id: "same-entry-current-capacity",
+      valueId: "enough",
+      valueLabel: "有余量",
+      internalScore: 2,
+      observedAt: "2026-05-18T09:00:00.000Z",
+    });
+    const overwrittenObservation = energyObservation({
+      id: "same-entry-current-capacity",
+      valueId: "empty",
+      valueLabel: "完全没电",
+      internalScore: -3,
+      observedAt: "2026-05-18T09:05:00.000Z",
+    });
+
+    await saveEnergyObservation(database, firstObservation);
+    await saveEnergyObservation(database, overwrittenObservation);
+
+    await expect(readEnergyObservations(database)).resolves.toEqual([
+      overwrittenObservation,
+    ]);
+  });
+
+  it("deletes an energy observation by id", async () => {
+    const database = createTestDatabase();
+    const deletedObservation = energyObservation({ id: "mistaken-energy-tap" });
+    const keptObservation = energyObservation({
+      id: "kept-energy-observation",
+      dimensionId: "attentionBandwidth",
+      valueId: "focused",
+      valueLabel: "能聚焦",
+      internalScore: 3,
+    });
+
+    await saveEnergyObservation(database, deletedObservation);
+    await saveEnergyObservation(database, keptObservation);
+
+    await deleteEnergyObservation(database, "mistaken-energy-tap");
+
+    await expect(readEnergyObservations(database)).resolves.toEqual([
+      keptObservation,
+    ]);
+  });
+
+  it("reads energy observations by observed time range", async () => {
+    const database = createTestDatabase();
+    const previousDay = energyObservation({
+      id: "previous-energy-day",
+      observedAt: "2026-05-17T23:30:00.000Z",
+    });
+    const rangeStart = energyObservation({
+      id: "range-start",
+      observedAt: "2026-05-18T00:00:00.000Z",
+    });
+    const evening = energyObservation({
+      id: "energy-evening",
+      dimensionId: "socialBattery",
+      valueId: "quiet",
+      valueLabel: "想安静",
+      internalScore: -1,
+      observedAt: "2026-05-18T22:00:00.000Z",
+    });
+    const rangeEnd = energyObservation({
+      id: "range-end",
+      observedAt: "2026-05-19T00:00:00.000Z",
+    });
+
+    await saveEnergyObservation(database, rangeEnd);
+    await saveEnergyObservation(database, evening);
+    await saveEnergyObservation(database, previousDay);
+    await saveEnergyObservation(database, rangeStart);
+
+    await expect(
+      readEnergyObservations(database, {
+        from: "2026-05-18T00:00:00.000Z",
+        to: "2026-05-19T00:00:00.000Z",
+      }),
+    ).resolves.toEqual([rangeStart, evening]);
+    await expect(readEnergyObservations(database)).resolves.toEqual([
+      previousDay,
+      rangeStart,
+      evening,
+      rangeEnd,
+    ]);
+  });
+
+  it("keeps energy observations out of the app shell local data snapshot", async () => {
+    const database = createTestDatabase();
+    await saveEnergyObservation(database, energyObservation());
+
+    await expect(readLifeOSLocalData(database)).resolves.toEqual({
+      onboardingAnswer: null,
+      startupScanProfile: null,
+    });
+  });
+
+  it("keeps historical energy observations when querying from a new local day", async () => {
+    const database = createTestDatabase();
+    const yesterday = energyObservation({
+      id: "energy-yesterday",
+      observedAt: "2026-05-18T22:30:00.000Z",
+    });
+    const today = energyObservation({
+      id: "energy-today",
+      observedAt: "2026-05-19T07:30:00.000Z",
+    });
+
+    await saveEnergyObservation(database, yesterday);
+    await saveEnergyObservation(database, today);
+
+    await expect(
+      readEnergyObservations(database, {
+        from: "2026-05-19T00:00:00.000Z",
+      }),
+    ).resolves.toEqual([today]);
+    await expect(readEnergyObservations(database)).resolves.toEqual([
+      yesterday,
+      today,
+    ]);
   });
 });

@@ -127,3 +127,47 @@ export type EcosystemDimensionSummary = {
   latestObservation: EcosystemObservation | null;
   summaryLabel: string | null;
 };
+
+export type EnergyInternalScore = -3 | -2 | -1 | 0 | 1 | 2 | 3;
+
+export type EnergyDimensionId =
+  | "currentCapacity"
+  | "pressureLoad"
+  | "emotionalWeather"
+  | "attentionBandwidth"
+  | "socialBattery"
+  | "actionResistance";
+
+export type EnergySemanticValue = {
+  id: string;
+  label: string;
+  internalScore: EnergyInternalScore;
+};
+
+export type EnergyDimensionDefinition = {
+  id: EnergyDimensionId;
+  label: string;
+  description: string;
+  values: EnergySemanticValue[];
+};
+
+export type EnergyObservation = {
+  id: string;
+  dimensionId: EnergyDimensionId;
+  valueId: string;
+  valueLabel: string;
+  internalScore: EnergyInternalScore;
+  observedAt: string;
+  note?: string;
+};
+
+export type EnergyCompassRange = "1d" | "7d" | "15d" | "30d";
+
+export type EnergyDimensionSummary = {
+  dimensionId: EnergyDimensionId;
+  observationCount: number;
+  averageInternalScore: number | null;
+  lowObservationCount: number;
+  latestObservation: EnergyObservation | null;
+  summaryLabel: string | null;
+};

@@ -49,6 +49,7 @@ describe("StartupDashboard", () => {
     expect(screen.getAllByText("建议优先开启").length).toBeGreaterThan(0);
     expect(screen.getAllByText("个人生态系统").length).toBeGreaterThan(0);
     expect(screen.getByText("能量管理系统")).toBeInTheDocument();
+    expect(screen.getByText("可进入")).toBeInTheDocument();
     expect(screen.getByText("认知管理系统")).toBeInTheDocument();
     expect(screen.getByText("人生目标管理系统")).toBeInTheDocument();
     expect(screen.getByText("人际关系管理系统")).toBeInTheDocument();
@@ -90,6 +91,9 @@ describe("StartupDashboard", () => {
     expect(screen.getByRole("heading", { name: "重置本地 LifeOS 数据" })).toHaveClass(
       "retro-ui-dialog-title",
     );
+    expect(
+      screen.getByText("这会清空当前设备上的首次扫描回答、启动扫描结果、生态观察点和能量观察点。"),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("输入 RESET 确认重置")).toHaveClass(
       "startup-dashboard-reset-input",
     );
@@ -119,8 +123,45 @@ describe("StartupDashboard", () => {
 
     await user.click(screen.getAllByRole("button", { name: "查看" })[1]);
 
+    expect(onOpenSubsystem).toHaveBeenCalledWith("energy");
+
+    await user.click(screen.getAllByRole("button", { name: "查看" })[2]);
+
     expect(screen.getByRole("status")).toHaveTextContent(
-      "能量管理系统 会在后续版本开放",
+      "认知管理系统 会在后续版本开放",
     );
+  });
+
+  it("opens the energy management recommendation card", async () => {
+    const user = userEvent.setup();
+    const onOpenSubsystem = vi.fn();
+    const energyProfile: StartupScanProfile = {
+      ...profile,
+      suggestedSubsystems: [
+        {
+          id: "energy",
+          label: "能量管理系统",
+          reason: "你的回答提到了「情绪稳定」，可以先用能量管理系统记录心理余量。",
+          sourceAnswerRefs: [
+            {
+              questionId: "q1-state-decline-signal",
+              optionId: "q1-emotional-stability",
+            },
+          ],
+        },
+      ],
+    };
+
+    render(
+      <StartupDashboard
+        onOpenSubsystem={onOpenSubsystem}
+        onResetConfirmed={vi.fn()}
+        profile={energyProfile}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "查看系统入口" }));
+
+    expect(onOpenSubsystem).toHaveBeenCalledWith("energy");
   });
 });

@@ -5,13 +5,17 @@ import { useEffect, useState } from "react";
 import {
   clearLifeOSLocalData,
   deleteEcosystemObservation,
+  deleteEnergyObservation,
   lifeOSLocalDatabase,
   readEcosystemObservations,
+  readEnergyObservations,
   readLifeOSLocalData,
   saveOnboardingAnswerRecord,
   saveEcosystemObservation,
+  saveEnergyObservation,
   saveStartupScanProfile,
 } from "@/features/local-data";
+import { EnergyManagementPanel } from "@/features/energy-management";
 import { OnboardingFlow } from "@/features/onboarding";
 import { PersonalEcosystemPanel } from "@/features/personal-ecosystem";
 import { StartupScreen, WindowFrame } from "@/features/retro-ui";
@@ -19,6 +23,7 @@ import { StartupDashboard } from "@/features/startup-dashboard";
 import { generateStartupScanProfile } from "@/features/startup-scan-generation";
 import type {
   EcosystemObservation,
+  EnergyObservation,
   OnboardingAnswerRecord,
   SubsystemId,
   StartupScanProfile,
@@ -34,9 +39,12 @@ export type AppShellDataSnapshot = {
 export type AppShellDataAdapter = {
   read: () => Promise<AppShellDataSnapshot>;
   readEcosystemObservations: () => Promise<EcosystemObservation[]>;
+  readEnergyObservations: () => Promise<EnergyObservation[]>;
   deleteEcosystemObservation: (observationId: string) => Promise<void>;
+  deleteEnergyObservation: (observationId: string) => Promise<void>;
   saveOnboardingAnswer: (record: OnboardingAnswerRecord) => Promise<void>;
   saveEcosystemObservation: (observation: EcosystemObservation) => Promise<void>;
+  saveEnergyObservation: (observation: EnergyObservation) => Promise<void>;
   saveStartupScanProfile: (profile: StartupScanProfile) => Promise<void>;
   clear: () => Promise<void>;
 };
@@ -46,7 +54,8 @@ export type AppShellMode =
   | "startup"
   | "onboarding"
   | "dashboard"
-  | "personal-ecosystem";
+  | "personal-ecosystem"
+  | "energy-management";
 
 export type AppShellProps = {
   dataAdapter?: AppShellDataAdapter;
@@ -57,12 +66,17 @@ export type AppShellProps = {
 const defaultDataAdapter: AppShellDataAdapter = {
   read: () => readLifeOSLocalData(lifeOSLocalDatabase),
   readEcosystemObservations: () => readEcosystemObservations(lifeOSLocalDatabase),
+  readEnergyObservations: () => readEnergyObservations(lifeOSLocalDatabase),
   deleteEcosystemObservation: (observationId) =>
     deleteEcosystemObservation(lifeOSLocalDatabase, observationId),
+  deleteEnergyObservation: (observationId) =>
+    deleteEnergyObservation(lifeOSLocalDatabase, observationId),
   saveOnboardingAnswer: (record) =>
     saveOnboardingAnswerRecord(lifeOSLocalDatabase, record),
   saveEcosystemObservation: (observation) =>
     saveEcosystemObservation(lifeOSLocalDatabase, observation),
+  saveEnergyObservation: (observation) =>
+    saveEnergyObservation(lifeOSLocalDatabase, observation),
   saveStartupScanProfile: (profile) =>
     saveStartupScanProfile(lifeOSLocalDatabase, profile),
   clear: () => clearLifeOSLocalData(lifeOSLocalDatabase),
@@ -79,6 +93,9 @@ export function AppShell({
   const [ecosystemObservations, setEcosystemObservations] = useState<
     EcosystemObservation[]
   >([]);
+  const [energyObservations, setEnergyObservations] = useState<EnergyObservation[]>(
+    [],
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -125,17 +142,23 @@ export function AppShell({
     await dataAdapter.clear();
     setStartupScanProfile(null);
     setEcosystemObservations([]);
+    setEnergyObservations([]);
     setMode("startup");
   }
 
   async function handleOpenSubsystem(subsystemId: SubsystemId) {
-    if (subsystemId !== "ecosystem") {
+    if (subsystemId === "ecosystem") {
+      const observations = await dataAdapter.readEcosystemObservations();
+      setEcosystemObservations(observations);
+      setMode("personal-ecosystem");
       return;
     }
 
-    const observations = await dataAdapter.readEcosystemObservations();
-    setEcosystemObservations(observations);
-    setMode("personal-ecosystem");
+    if (subsystemId === "energy") {
+      const observations = await dataAdapter.readEnergyObservations();
+      setEnergyObservations(observations);
+      setMode("energy-management");
+    }
   }
 
   async function handleSaveEcosystemObservation(
@@ -148,6 +171,14 @@ export function AppShell({
     await dataAdapter.deleteEcosystemObservation(observationId);
   }
 
+  async function handleSaveEnergyObservation(observation: EnergyObservation) {
+    await dataAdapter.saveEnergyObservation(observation);
+  }
+
+  async function handleDeleteEnergyObservation(observationId: string) {
+    await dataAdapter.deleteEnergyObservation(observationId);
+  }
+
   return (
     <main className="lifeos-screen">
       <div className={styles.shell}>
@@ -155,7 +186,7 @@ export function AppShell({
           <StartupScreen
             status="正在读取个人档案..."
             subtitle="请稍候，本地小电脑正在检查 IndexedDB。"
-            title="LifeOS v1.2"
+            title="LifeOS v1.3"
           />
         ) : null}
 
@@ -192,6 +223,15 @@ export function AppShell({
             onBack={() => setMode("dashboard")}
             onDeleteObservation={handleDeleteEcosystemObservation}
             onSaveObservation={handleSaveEcosystemObservation}
+          />
+        ) : null}
+
+        {mode === "energy-management" ? (
+          <EnergyManagementPanel
+            observations={energyObservations}
+            onBack={() => setMode("dashboard")}
+            onDeleteObservation={handleDeleteEnergyObservation}
+            onSaveObservation={handleSaveEnergyObservation}
           />
         ) : null}
       </div>

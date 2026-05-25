@@ -29,6 +29,7 @@ export type StartupDashboardProps = {
 };
 
 const RESET_TEXT = "RESET";
+const OPEN_SUBSYSTEM_IDS = new Set<SubsystemId>(["ecosystem", "energy"]);
 
 export function StartupDashboard({
   profile,
@@ -64,7 +65,7 @@ export function StartupDashboard({
   function handleSubsystemClick(
     subsystem: SuggestedSubsystem | (typeof candidateSubsystems)[number],
   ) {
-    if (subsystem.id === "ecosystem" && onOpenSubsystem) {
+    if (OPEN_SUBSYSTEM_IDS.has(subsystem.id) && onOpenSubsystem) {
       onOpenSubsystem(subsystem.id);
       return;
     }
@@ -109,24 +110,26 @@ export function StartupDashboard({
 
         <Panel title="六个子系统地图">
           <ul className={styles.subsystemList}>
-            {candidateSubsystems.map((subsystem) => (
-              <li key={subsystem.id}>
-                <div>
-                  <StatusLabel tone={suggestedIds.has(subsystem.id) ? "pending" : "neutral"}>
-                    {suggestedIds.has(subsystem.id) ? "建议优先开启" : "后续开放"}
-                  </StatusLabel>
-                  <strong>{subsystem.label}</strong>
-                  <p>{subsystem.description}</p>
-                </div>
-                <Button
-                  onClick={() => handleSubsystemClick(subsystem)}
-                  size="sm"
-                  variant="quiet"
-                >
-                  查看
-                </Button>
-              </li>
-            ))}
+            {candidateSubsystems.map((subsystem) => {
+              const status = getSubsystemStatus(subsystem.id, suggestedIds);
+
+              return (
+                <li key={subsystem.id}>
+                  <div>
+                    <StatusLabel tone={status.tone}>{status.label}</StatusLabel>
+                    <strong>{subsystem.label}</strong>
+                    <p>{subsystem.description}</p>
+                  </div>
+                  <Button
+                    onClick={() => handleSubsystemClick(subsystem)}
+                    size="sm"
+                    variant="quiet"
+                  >
+                    查看
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
           {subsystemMessage ? <p role="status">{subsystemMessage}</p> : null}
         </Panel>
@@ -171,7 +174,7 @@ export function StartupDashboard({
         open={resetOpen}
         title="重置本地 LifeOS 数据"
       >
-        <p>这会清空当前设备上的首次扫描回答和启动扫描结果。</p>
+        <p>这会清空当前设备上的首次扫描回答、启动扫描结果、生态观察点和能量观察点。</p>
         <label className={styles.resetLabel}>
           <span>输入 RESET 确认重置</span>
           <input
@@ -185,6 +188,21 @@ export function StartupDashboard({
       </Dialog>
     </WindowFrame>
   );
+}
+
+function getSubsystemStatus(
+  subsystemId: SubsystemId,
+  suggestedIds: Set<SubsystemId>,
+) {
+  if (suggestedIds.has(subsystemId)) {
+    return { label: "建议优先开启", tone: "pending" as const };
+  }
+
+  if (OPEN_SUBSYSTEM_IDS.has(subsystemId)) {
+    return { label: "可进入", tone: "ok" as const };
+  }
+
+  return { label: "后续开放", tone: "neutral" as const };
 }
 
 function toSourceItems(sourceAnswerRefs: SourceAnswerRef[]) {
