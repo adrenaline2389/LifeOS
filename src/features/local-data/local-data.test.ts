@@ -4,21 +4,25 @@ import type {
   EnergyObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
+  WalletContainer,
 } from "@/types/lifeos";
 import {
   clearLifeOSLocalData,
   createLifeOSLocalDatabase,
   deleteEcosystemObservation,
   deleteEnergyObservation,
+  deleteWalletContainer,
   readEcosystemObservations,
   readEnergyObservations,
   readLifeOSLocalData,
   readOnboardingAnswerRecord,
   readStartupScanProfile,
+  readWalletContainers,
   saveEcosystemObservation,
   saveEnergyObservation,
   saveOnboardingAnswerRecord,
   saveStartupScanProfile,
+  saveWalletContainer,
 } from "./index";
 
 const testDatabases: Array<ReturnType<typeof createLifeOSLocalDatabase>> = [];
@@ -109,6 +113,18 @@ const energyObservation = (
   ...overrides,
 });
 
+const walletContainer = (
+  overrides: Partial<WalletContainer> = {},
+): WalletContainer => ({
+  id: "wallet-container-1",
+  name: "日常账户",
+  balance: 1280.5,
+  color: "#5b8def",
+  createdAt: "2026-05-20T08:00:00.000Z",
+  updatedAt: "2026-05-20T08:00:00.000Z",
+  ...overrides,
+});
+
 describe("LifeOS local data storage", () => {
   it("returns an empty local data snapshot before anything is saved", async () => {
     const database = createTestDatabase();
@@ -147,6 +163,7 @@ describe("LifeOS local data storage", () => {
     await saveStartupScanProfile(database, startupScanProfile);
     await saveEcosystemObservation(database, ecosystemObservation());
     await saveEnergyObservation(database, energyObservation());
+    await saveWalletContainer(database, walletContainer());
 
     await clearLifeOSLocalData(database);
 
@@ -156,6 +173,7 @@ describe("LifeOS local data storage", () => {
     });
     await expect(readEcosystemObservations(database)).resolves.toEqual([]);
     await expect(readEnergyObservations(database)).resolves.toEqual([]);
+    await expect(readWalletContainers(database)).resolves.toEqual([]);
   });
 
   it("saves ecosystem observations with semantic snapshots", async () => {
@@ -406,6 +424,98 @@ describe("LifeOS local data storage", () => {
     await expect(readEnergyObservations(database)).resolves.toEqual([
       yesterday,
       today,
+    ]);
+  });
+
+  it("saves and reads wallet containers", async () => {
+    const database = createTestDatabase();
+    const container = walletContainer({
+      note: "本地手动余额快照。",
+    });
+
+    await saveWalletContainer(database, container);
+
+    await expect(readWalletContainers(database)).resolves.toEqual([container]);
+  });
+
+  it("overwrites a wallet container when the same id is saved again", async () => {
+    const database = createTestDatabase();
+    const firstContainer = walletContainer({
+      id: "same-wallet-container",
+      name: "旧名称",
+      balance: 200,
+      updatedAt: "2026-05-20T08:00:00.000Z",
+    });
+    const overwrittenContainer = walletContainer({
+      id: "same-wallet-container",
+      name: "新名称",
+      balance: 350.75,
+      color: "#f97316",
+      updatedAt: "2026-05-20T09:00:00.000Z",
+    });
+
+    await saveWalletContainer(database, firstContainer);
+    await saveWalletContainer(database, overwrittenContainer);
+
+    await expect(readWalletContainers(database)).resolves.toEqual([
+      overwrittenContainer,
+    ]);
+  });
+
+  it("reads all wallet containers ordered by creation time", async () => {
+    const database = createTestDatabase();
+    const secondContainer = walletContainer({
+      id: "second-wallet-container",
+      name: "第二个账户",
+      createdAt: "2026-05-20T09:00:00.000Z",
+      updatedAt: "2026-05-20T09:00:00.000Z",
+    });
+    const firstContainer = walletContainer({
+      id: "first-wallet-container",
+      name: "第一个账户",
+      createdAt: "2026-05-20T08:00:00.000Z",
+      updatedAt: "2026-05-20T08:00:00.000Z",
+    });
+
+    await saveWalletContainer(database, secondContainer);
+    await saveWalletContainer(database, firstContainer);
+
+    await expect(readWalletContainers(database)).resolves.toEqual([
+      firstContainer,
+      secondContainer,
+    ]);
+  });
+
+  it("deletes a wallet container by id", async () => {
+    const database = createTestDatabase();
+    const deletedContainer = walletContainer({ id: "wallet-to-delete" });
+    const keptContainer = walletContainer({
+      id: "wallet-to-keep",
+      name: "保留账户",
+    });
+
+    await saveWalletContainer(database, deletedContainer);
+    await saveWalletContainer(database, keptContainer);
+
+    await deleteWalletContainer(database, "wallet-to-delete");
+
+    await expect(readWalletContainers(database)).resolves.toEqual([
+      keptContainer,
+    ]);
+  });
+
+  it("preserves negative wallet container balances", async () => {
+    const database = createTestDatabase();
+    const debtContainer = walletContainer({
+      id: "credit-card-debt",
+      name: "信用卡当前余额",
+      balance: -421.35,
+    });
+
+    await saveWalletContainer(database, debtContainer);
+
+    await expect(readWalletContainers(database)).resolves.toEqual([
+      debtContainer,
     ]);
   });
 });

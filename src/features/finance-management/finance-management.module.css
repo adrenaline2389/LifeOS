@@ -1,0 +1,223 @@
+.layout {
+  display: grid;
+  gap: 1.125rem;
+}
+
+.header {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(17, 17, 17, 0.1) 0,
+      rgba(17, 17, 17, 0.1) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    #fffdf2;
+  border: 2px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #8a8a82,
+    3px 3px 0 #222222;
+  padding: 0.75rem 1rem;
+}
+
+.header p,
+.walletIntro p,
+.containerHeader p,
+.stateNote {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.header p {
+  font-weight: 700;
+}
+
+.walletIntro,
+.editorHeader,
+.containerHeader,
+.containerActions,
+.futureList li,
+.legendList li {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.walletIntro,
+.editorHeader {
+  justify-content: space-between;
+}
+
+.walletGrid {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  margin-block: 1rem;
+}
+
+.donut {
+  aspect-ratio: 1;
+  border: 3px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #77776d,
+    4px 4px 0 #2a2a2a;
+  display: grid;
+  min-width: 0;
+  padding: 1.2rem;
+  place-items: center;
+}
+
+.donutCenter {
+  align-items: center;
+  background: #fffdf2;
+  border: 2px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #aaa69b;
+  display: grid;
+  gap: 0.35rem;
+  height: 68%;
+  justify-items: center;
+  padding: 0.5rem;
+  text-align: center;
+  width: 68%;
+}
+
+.donutCenter span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.donutCenter strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.legendList,
+.containerList,
+.futureList {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legendList li {
+  background: #fffdf2;
+  border: 2px solid #111111;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #aaa69b;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  padding: 0.5rem 0.625rem;
+}
+
+.containerCard,
+.emptyContainer,
+.editor,
+.futureList li,
+.stateNote {
+  background:
+    linear-gradient(#fffdf2, #f6f4eb) padding-box,
+    repeating-linear-gradient(
+      0deg,
+      #111111 0,
+      #111111 2px,
+      transparent 2px,
+      transparent 5px
+    );
+  border: 3px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #ffffff,
+    inset -2px -2px 0 #8a8a82,
+    4px 4px 0 #2a2a2a;
+  padding: 0.875rem;
+}
+
+.containerCard {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.containerHeader {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.containerHeader > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.containerHeader p {
+  color: #4a4a44;
+}
+
+.containerActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.balanceText {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.colorChip {
+  border: 2px solid #111111;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.65);
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 1rem;
+}
+
+.editor {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.editor label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.editor input,
+.editor select,
+.editor textarea {
+  background: #fffdf2;
+  border: 2px solid #111111;
+  box-shadow:
+    inset 2px 2px 0 #8a8a82,
+    inset -2px -2px 0 #ffffff;
+  color: #111111;
+  font: inherit;
+  padding: 0.5rem;
+}
+
+.futureList li {
+  justify-content: space-between;
+}
+
+@media (max-width: 640px) {
+  .walletGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .walletIntro,
+  .editorHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .donut {
+    justify-self: center;
+    width: min(100%, 14rem);
+  }
+}

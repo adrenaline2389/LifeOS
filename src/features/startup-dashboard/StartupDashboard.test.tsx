@@ -49,7 +49,7 @@ describe("StartupDashboard", () => {
     expect(screen.getAllByText("建议优先开启").length).toBeGreaterThan(0);
     expect(screen.getAllByText("个人生态系统").length).toBeGreaterThan(0);
     expect(screen.getByText("能量管理系统")).toBeInTheDocument();
-    expect(screen.getByText("可进入")).toBeInTheDocument();
+    expect(screen.getAllByText("可进入").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("认知管理系统")).toBeInTheDocument();
     expect(screen.getByText("人生目标管理系统")).toBeInTheDocument();
     expect(screen.getByText("人际关系管理系统")).toBeInTheDocument();
@@ -92,7 +92,9 @@ describe("StartupDashboard", () => {
       "retro-ui-dialog-title",
     );
     expect(
-      screen.getByText("这会清空当前设备上的首次扫描回答、启动扫描结果、生态观察点和能量观察点。"),
+      screen.getByText(
+        "这会清空当前设备上的首次扫描回答、启动扫描结果、生态观察点、能量观察点和钱包容器。",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("输入 RESET 确认重置")).toHaveClass(
       "startup-dashboard-reset-input",
@@ -105,7 +107,7 @@ describe("StartupDashboard", () => {
     expect(onResetConfirmed).toHaveBeenCalledOnce();
   });
 
-  it("opens the personal ecosystem entry and keeps other subsystems as later entries", async () => {
+  it("opens the available subsystem entries and keeps other subsystems as later entries", async () => {
     const user = userEvent.setup();
     const onOpenSubsystem = vi.fn();
 
@@ -124,6 +126,10 @@ describe("StartupDashboard", () => {
     await user.click(screen.getAllByRole("button", { name: "查看" })[1]);
 
     expect(onOpenSubsystem).toHaveBeenCalledWith("energy");
+
+    await user.click(screen.getAllByRole("button", { name: "查看" })[5]);
+
+    expect(onOpenSubsystem).toHaveBeenCalledWith("finance");
 
     await user.click(screen.getAllByRole("button", { name: "查看" })[2]);
 
@@ -163,5 +169,38 @@ describe("StartupDashboard", () => {
     await user.click(screen.getByRole("button", { name: "查看系统入口" }));
 
     expect(onOpenSubsystem).toHaveBeenCalledWith("energy");
+  });
+
+  it("opens the finance management recommendation card", async () => {
+    const user = userEvent.setup();
+    const onOpenSubsystem = vi.fn();
+    const financeProfile: StartupScanProfile = {
+      ...profile,
+      suggestedSubsystems: [
+        {
+          id: "finance",
+          label: "财务管理系统",
+          reason: "你的回答提到了「资源和自由度」，可以先用财务管理系统观察当前余额快照。",
+          sourceAnswerRefs: [
+            {
+              questionId: "q8-growth-direction",
+              optionId: "q8-resource-freedom",
+            },
+          ],
+        },
+      ],
+    };
+
+    render(
+      <StartupDashboard
+        onOpenSubsystem={onOpenSubsystem}
+        onResetConfirmed={vi.fn()}
+        profile={financeProfile}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "查看系统入口" }));
+
+    expect(onOpenSubsystem).toHaveBeenCalledWith("finance");
   });
 });

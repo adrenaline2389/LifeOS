@@ -4,6 +4,7 @@ import type {
   EnergyObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
+  WalletContainer,
 } from "@/types/lifeos";
 
 export const LIFEOS_LOCAL_DATABASE_NAME = "lifeos-v1";
@@ -30,6 +31,8 @@ type StoredEnergyObservation = EnergyObservation & {
   updatedAt: string;
 };
 
+type StoredWalletContainer = WalletContainer;
+
 export type LifeOSLocalDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
   startupScanProfile: StartupScanProfile | null;
@@ -50,6 +53,7 @@ export class LifeOSLocalDatabase extends Dexie {
   startupScanProfiles!: Table<StoredStartupScanProfile, string>;
   ecosystemObservations!: Table<StoredEcosystemObservation, string>;
   energyObservations!: Table<StoredEnergyObservation, string>;
+  walletContainers!: Table<StoredWalletContainer, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -73,6 +77,13 @@ export class LifeOSLocalDatabase extends Dexie {
       startupScanProfiles: "id, updatedAt",
       ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
       energyObservations: "id, observedAt, dimensionId, updatedAt",
+    });
+    this.version(5).stores({
+      onboardingAnswers: "id, updatedAt",
+      startupScanProfiles: "id, updatedAt",
+      ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
+      energyObservations: "id, observedAt, dimensionId, updatedAt",
+      walletContainers: "id, createdAt, updatedAt",
     });
   }
 }
@@ -217,6 +228,36 @@ export const readEnergyObservations = async (
     }));
 };
 
+export const saveWalletContainer = async (
+  database: LifeOSLocalDatabase,
+  container: WalletContainer,
+): Promise<void> => {
+  await database.walletContainers.put(container);
+};
+
+export const deleteWalletContainer = async (
+  database: LifeOSLocalDatabase,
+  containerId: string,
+): Promise<void> => {
+  await database.walletContainers.delete(containerId);
+};
+
+export const readWalletContainers = async (
+  database: LifeOSLocalDatabase,
+): Promise<WalletContainer[]> => {
+  const containers = await database.walletContainers.orderBy("createdAt").toArray();
+
+  return containers.map((container) => ({
+    id: container.id,
+    name: container.name,
+    balance: container.balance,
+    color: container.color,
+    ...(container.note ? { note: container.note } : {}),
+    createdAt: container.createdAt,
+    updatedAt: container.updatedAt,
+  }));
+};
+
 export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
@@ -229,15 +270,19 @@ export const clearLifeOSLocalData = async (
 ): Promise<void> => {
   await database.transaction(
     "rw",
-    database.onboardingAnswers,
-    database.startupScanProfiles,
-    database.ecosystemObservations,
-    database.energyObservations,
+    [
+      database.onboardingAnswers,
+      database.startupScanProfiles,
+      database.ecosystemObservations,
+      database.energyObservations,
+      database.walletContainers,
+    ],
     async () => {
       await database.onboardingAnswers.clear();
       await database.startupScanProfiles.clear();
       await database.ecosystemObservations.clear();
       await database.energyObservations.clear();
+      await database.walletContainers.clear();
     },
   );
 };

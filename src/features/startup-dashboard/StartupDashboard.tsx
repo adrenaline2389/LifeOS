@@ -29,7 +29,7 @@ export type StartupDashboardProps = {
 };
 
 const RESET_TEXT = "RESET";
-const OPEN_SUBSYSTEM_IDS = new Set<SubsystemId>(["ecosystem", "energy"]);
+const OPEN_SUBSYSTEM_IDS = new Set<SubsystemId>(["ecosystem", "energy", "finance"]);
 
 export function StartupDashboard({
   profile,
@@ -174,7 +174,9 @@ export function StartupDashboard({
         open={resetOpen}
         title="重置本地 LifeOS 数据"
       >
-        <p>这会清空当前设备上的首次扫描回答、启动扫描结果、生态观察点和能量观察点。</p>
+        <p>
+          这会清空当前设备上的首次扫描回答、启动扫描结果、生态观察点、能量观察点和钱包容器。
+        </p>
         <label className={styles.resetLabel}>
           <span>输入 RESET 确认重置</span>
           <input

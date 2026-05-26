@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LifeOS v1.3",
+  title: "LifeOS v1.4",
   description: "本地优先的六系统人生操作系统",
 };
 

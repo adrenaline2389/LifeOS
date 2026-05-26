@@ -6,16 +6,20 @@ import {
   clearLifeOSLocalData,
   deleteEcosystemObservation,
   deleteEnergyObservation,
+  deleteWalletContainer,
   lifeOSLocalDatabase,
   readEcosystemObservations,
   readEnergyObservations,
   readLifeOSLocalData,
+  readWalletContainers,
   saveOnboardingAnswerRecord,
   saveEcosystemObservation,
   saveEnergyObservation,
   saveStartupScanProfile,
+  saveWalletContainer,
 } from "@/features/local-data";
 import { EnergyManagementPanel } from "@/features/energy-management";
+import { FinanceManagementPanel } from "@/features/finance-management";
 import { OnboardingFlow } from "@/features/onboarding";
 import { PersonalEcosystemPanel } from "@/features/personal-ecosystem";
 import { StartupScreen, WindowFrame } from "@/features/retro-ui";
@@ -27,6 +31,7 @@ import type {
   OnboardingAnswerRecord,
   SubsystemId,
   StartupScanProfile,
+  WalletContainer,
 } from "@/types/lifeos";
 
 import styles from "./app-shell.module.css";
@@ -40,11 +45,14 @@ export type AppShellDataAdapter = {
   read: () => Promise<AppShellDataSnapshot>;
   readEcosystemObservations: () => Promise<EcosystemObservation[]>;
   readEnergyObservations: () => Promise<EnergyObservation[]>;
+  readWalletContainers: () => Promise<WalletContainer[]>;
   deleteEcosystemObservation: (observationId: string) => Promise<void>;
   deleteEnergyObservation: (observationId: string) => Promise<void>;
+  deleteWalletContainer: (containerId: string) => Promise<void>;
   saveOnboardingAnswer: (record: OnboardingAnswerRecord) => Promise<void>;
   saveEcosystemObservation: (observation: EcosystemObservation) => Promise<void>;
   saveEnergyObservation: (observation: EnergyObservation) => Promise<void>;
+  saveWalletContainer: (container: WalletContainer) => Promise<void>;
   saveStartupScanProfile: (profile: StartupScanProfile) => Promise<void>;
   clear: () => Promise<void>;
 };
@@ -55,7 +63,8 @@ export type AppShellMode =
   | "onboarding"
   | "dashboard"
   | "personal-ecosystem"
-  | "energy-management";
+  | "energy-management"
+  | "finance-management";
 
 export type AppShellProps = {
   dataAdapter?: AppShellDataAdapter;
@@ -67,16 +76,21 @@ const defaultDataAdapter: AppShellDataAdapter = {
   read: () => readLifeOSLocalData(lifeOSLocalDatabase),
   readEcosystemObservations: () => readEcosystemObservations(lifeOSLocalDatabase),
   readEnergyObservations: () => readEnergyObservations(lifeOSLocalDatabase),
+  readWalletContainers: () => readWalletContainers(lifeOSLocalDatabase),
   deleteEcosystemObservation: (observationId) =>
     deleteEcosystemObservation(lifeOSLocalDatabase, observationId),
   deleteEnergyObservation: (observationId) =>
     deleteEnergyObservation(lifeOSLocalDatabase, observationId),
+  deleteWalletContainer: (containerId) =>
+    deleteWalletContainer(lifeOSLocalDatabase, containerId),
   saveOnboardingAnswer: (record) =>
     saveOnboardingAnswerRecord(lifeOSLocalDatabase, record),
   saveEcosystemObservation: (observation) =>
     saveEcosystemObservation(lifeOSLocalDatabase, observation),
   saveEnergyObservation: (observation) =>
     saveEnergyObservation(lifeOSLocalDatabase, observation),
+  saveWalletContainer: (container) =>
+    saveWalletContainer(lifeOSLocalDatabase, container),
   saveStartupScanProfile: (profile) =>
     saveStartupScanProfile(lifeOSLocalDatabase, profile),
   clear: () => clearLifeOSLocalData(lifeOSLocalDatabase),
@@ -96,6 +110,7 @@ export function AppShell({
   const [energyObservations, setEnergyObservations] = useState<EnergyObservation[]>(
     [],
   );
+  const [walletContainers, setWalletContainers] = useState<WalletContainer[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -143,6 +158,7 @@ export function AppShell({
     setStartupScanProfile(null);
     setEcosystemObservations([]);
     setEnergyObservations([]);
+    setWalletContainers([]);
     setMode("startup");
   }
 
@@ -158,6 +174,13 @@ export function AppShell({
       const observations = await dataAdapter.readEnergyObservations();
       setEnergyObservations(observations);
       setMode("energy-management");
+      return;
+    }
+
+    if (subsystemId === "finance") {
+      const containers = await dataAdapter.readWalletContainers();
+      setWalletContainers(containers);
+      setMode("finance-management");
     }
   }
 
@@ -179,6 +202,14 @@ export function AppShell({
     await dataAdapter.deleteEnergyObservation(observationId);
   }
 
+  async function handleSaveWalletContainer(container: WalletContainer) {
+    await dataAdapter.saveWalletContainer(container);
+  }
+
+  async function handleDeleteWalletContainer(containerId: string) {
+    await dataAdapter.deleteWalletContainer(containerId);
+  }
+
   return (
     <main className="lifeos-screen">
       <div className={styles.shell}>
@@ -186,7 +217,7 @@ export function AppShell({
           <StartupScreen
             status="正在读取个人档案..."
             subtitle="请稍候，本地小电脑正在检查 IndexedDB。"
-            title="LifeOS v1.3"
+            title="LifeOS v1.4"
           />
         ) : null}
 
@@ -232,6 +263,15 @@ export function AppShell({
             onBack={() => setMode("dashboard")}
             onDeleteObservation={handleDeleteEnergyObservation}
             onSaveObservation={handleSaveEnergyObservation}
+          />
+        ) : null}
+
+        {mode === "finance-management" ? (
+          <FinanceManagementPanel
+            containers={walletContainers}
+            onBack={() => setMode("dashboard")}
+            onDeleteContainer={handleDeleteWalletContainer}
+            onSaveContainer={handleSaveWalletContainer}
           />
         ) : null}
       </div>

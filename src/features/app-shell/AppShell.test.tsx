@@ -7,6 +7,7 @@ import type {
   EnergyObservation,
   OnboardingAnswerRecord,
   StartupScanProfile,
+  WalletContainer,
 } from "@/types/lifeos";
 
 import { AppShell, type AppShellDataAdapter } from "./AppShell";
@@ -95,16 +96,20 @@ function createAdapter(
   },
   ecosystemObservations: EcosystemObservation[] = [],
   energyObservations: EnergyObservation[] = [],
+  walletContainers: WalletContainer[] = [],
 ): AppShellDataAdapter {
   return {
     read: vi.fn().mockResolvedValue(snapshot),
     readEcosystemObservations: vi.fn().mockResolvedValue(ecosystemObservations),
     readEnergyObservations: vi.fn().mockResolvedValue(energyObservations),
+    readWalletContainers: vi.fn().mockResolvedValue(walletContainers),
     deleteEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     deleteEnergyObservation: vi.fn().mockResolvedValue(undefined),
+    deleteWalletContainer: vi.fn().mockResolvedValue(undefined),
     saveOnboardingAnswer: vi.fn().mockResolvedValue(undefined),
     saveEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     saveEnergyObservation: vi.fn().mockResolvedValue(undefined),
+    saveWalletContainer: vi.fn().mockResolvedValue(undefined),
     saveStartupScanProfile: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
@@ -219,6 +224,57 @@ describe("AppShell", () => {
     expect(await screen.findByText("能量管理系统")).toBeInTheDocument();
     expect(screen.getByText("心理余量与恢复")).toBeInTheDocument();
     expect(adapter.readEnergyObservations).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole("button", { name: "返回启动面板" }));
+
+    expect(screen.getByText("LifeOS 启动面板")).toBeInTheDocument();
+  });
+
+  it("opens and returns from the finance management subsystem", async () => {
+    const user = userEvent.setup();
+    const financeProfile: StartupScanProfile = {
+      ...startupScanProfile,
+      suggestedSubsystems: [
+        {
+          id: "finance",
+          label: "财务管理系统",
+          reason: "你的回答提到了「资源自由度」，可以先用财务管理系统观察余额快照。",
+          sourceAnswerRefs: [
+            {
+              questionId: "q8-growth-direction",
+              optionId: "q8-resource-freedom",
+            },
+          ],
+        },
+      ],
+    };
+    const walletContainer: WalletContainer = {
+      id: "wallet-bank",
+      name: "银行卡",
+      balance: 1000,
+      color: "#2f9be7",
+      createdAt: "2026-05-27T08:00:00.000",
+      updatedAt: "2026-05-27T08:00:00.000",
+    };
+    const adapter = createAdapter(
+      {
+        onboardingAnswer: completedAnswer,
+        startupScanProfile: financeProfile,
+      },
+      [],
+      [],
+      [walletContainer],
+    );
+
+    render(<AppShell dataAdapter={adapter} />);
+
+    expect(await screen.findByText("LifeOS 启动面板")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "查看系统入口" }));
+
+    expect(await screen.findByText("我的钱包")).toBeInTheDocument();
+    expect(screen.getAllByText("银行卡").length).toBeGreaterThan(0);
+    expect(adapter.readWalletContainers).toHaveBeenCalledOnce();
 
     await user.click(screen.getByRole("button", { name: "返回启动面板" }));
 

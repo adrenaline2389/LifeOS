@@ -171,3 +171,13 @@ export type EnergyDimensionSummary = {
   latestObservation: EnergyObservation | null;
   summaryLabel: string | null;
 };
+
+export type WalletContainer = {
+  id: string;
+  name: string;
+  balance: number;
+  color: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
