@@ -181,3 +181,34 @@ export type WalletContainer = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type MoneyAmountPattern =
+  | {
+      kind: "fixed";
+      amount: number;
+    }
+  | {
+      kind: "variable";
+    };
+
+export type MoneyFrequencyPattern =
+  | {
+      kind: "fixed";
+      interval: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+    }
+  | {
+      kind: "variable";
+    };
+
+export type MoneyInflowSource = {
+  id: string;
+  name: string;
+  amountPattern: MoneyAmountPattern;
+  frequencyPattern: MoneyFrequencyPattern;
+  targetWalletContainerId: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MoneyInflowTargetStatus = "available" | "missing";

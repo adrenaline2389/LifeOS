@@ -6,12 +6,15 @@ import {
   clearLifeOSLocalData,
   deleteEcosystemObservation,
   deleteEnergyObservation,
+  deleteMoneyInflowSource,
   deleteWalletContainer,
   lifeOSLocalDatabase,
   readEcosystemObservations,
   readEnergyObservations,
   readLifeOSLocalData,
+  readMoneyInflowSources,
   readWalletContainers,
+  saveMoneyInflowSource,
   saveOnboardingAnswerRecord,
   saveEcosystemObservation,
   saveEnergyObservation,
@@ -28,6 +31,7 @@ import { generateStartupScanProfile } from "@/features/startup-scan-generation";
 import type {
   EcosystemObservation,
   EnergyObservation,
+  MoneyInflowSource,
   OnboardingAnswerRecord,
   SubsystemId,
   StartupScanProfile,
@@ -46,13 +50,16 @@ export type AppShellDataAdapter = {
   readEcosystemObservations: () => Promise<EcosystemObservation[]>;
   readEnergyObservations: () => Promise<EnergyObservation[]>;
   readWalletContainers: () => Promise<WalletContainer[]>;
+  readMoneyInflowSources: () => Promise<MoneyInflowSource[]>;
   deleteEcosystemObservation: (observationId: string) => Promise<void>;
   deleteEnergyObservation: (observationId: string) => Promise<void>;
   deleteWalletContainer: (containerId: string) => Promise<void>;
+  deleteMoneyInflowSource: (sourceId: string) => Promise<void>;
   saveOnboardingAnswer: (record: OnboardingAnswerRecord) => Promise<void>;
   saveEcosystemObservation: (observation: EcosystemObservation) => Promise<void>;
   saveEnergyObservation: (observation: EnergyObservation) => Promise<void>;
   saveWalletContainer: (container: WalletContainer) => Promise<void>;
+  saveMoneyInflowSource: (source: MoneyInflowSource) => Promise<void>;
   saveStartupScanProfile: (profile: StartupScanProfile) => Promise<void>;
   clear: () => Promise<void>;
 };
@@ -77,12 +84,15 @@ const defaultDataAdapter: AppShellDataAdapter = {
   readEcosystemObservations: () => readEcosystemObservations(lifeOSLocalDatabase),
   readEnergyObservations: () => readEnergyObservations(lifeOSLocalDatabase),
   readWalletContainers: () => readWalletContainers(lifeOSLocalDatabase),
+  readMoneyInflowSources: () => readMoneyInflowSources(lifeOSLocalDatabase),
   deleteEcosystemObservation: (observationId) =>
     deleteEcosystemObservation(lifeOSLocalDatabase, observationId),
   deleteEnergyObservation: (observationId) =>
     deleteEnergyObservation(lifeOSLocalDatabase, observationId),
   deleteWalletContainer: (containerId) =>
     deleteWalletContainer(lifeOSLocalDatabase, containerId),
+  deleteMoneyInflowSource: (sourceId) =>
+    deleteMoneyInflowSource(lifeOSLocalDatabase, sourceId),
   saveOnboardingAnswer: (record) =>
     saveOnboardingAnswerRecord(lifeOSLocalDatabase, record),
   saveEcosystemObservation: (observation) =>
@@ -91,6 +101,8 @@ const defaultDataAdapter: AppShellDataAdapter = {
     saveEnergyObservation(lifeOSLocalDatabase, observation),
   saveWalletContainer: (container) =>
     saveWalletContainer(lifeOSLocalDatabase, container),
+  saveMoneyInflowSource: (source) =>
+    saveMoneyInflowSource(lifeOSLocalDatabase, source),
   saveStartupScanProfile: (profile) =>
     saveStartupScanProfile(lifeOSLocalDatabase, profile),
   clear: () => clearLifeOSLocalData(lifeOSLocalDatabase),
@@ -111,6 +123,9 @@ export function AppShell({
     [],
   );
   const [walletContainers, setWalletContainers] = useState<WalletContainer[]>([]);
+  const [moneyInflowSources, setMoneyInflowSources] = useState<MoneyInflowSource[]>(
+    [],
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -159,6 +174,7 @@ export function AppShell({
     setEcosystemObservations([]);
     setEnergyObservations([]);
     setWalletContainers([]);
+    setMoneyInflowSources([]);
     setMode("startup");
   }
 
@@ -178,8 +194,12 @@ export function AppShell({
     }
 
     if (subsystemId === "finance") {
-      const containers = await dataAdapter.readWalletContainers();
+      const [containers, sources] = await Promise.all([
+        dataAdapter.readWalletContainers(),
+        dataAdapter.readMoneyInflowSources(),
+      ]);
       setWalletContainers(containers);
+      setMoneyInflowSources(sources);
       setMode("finance-management");
     }
   }
@@ -208,6 +228,14 @@ export function AppShell({
 
   async function handleDeleteWalletContainer(containerId: string) {
     await dataAdapter.deleteWalletContainer(containerId);
+  }
+
+  async function handleSaveMoneyInflowSource(source: MoneyInflowSource) {
+    await dataAdapter.saveMoneyInflowSource(source);
+  }
+
+  async function handleDeleteMoneyInflowSource(sourceId: string) {
+    await dataAdapter.deleteMoneyInflowSource(sourceId);
   }
 
   return (
@@ -269,9 +297,12 @@ export function AppShell({
         {mode === "finance-management" ? (
           <FinanceManagementPanel
             containers={walletContainers}
+            incomeSources={moneyInflowSources}
             onBack={() => setMode("dashboard")}
             onDeleteContainer={handleDeleteWalletContainer}
+            onDeleteIncomeSource={handleDeleteMoneyInflowSource}
             onSaveContainer={handleSaveWalletContainer}
+            onSaveIncomeSource={handleSaveMoneyInflowSource}
           />
         ) : null}
       </div>

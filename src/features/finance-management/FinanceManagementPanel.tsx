@@ -4,22 +4,28 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 
 import { Button, Panel, StatusLabel, WindowFrame } from "@/features/retro-ui";
-import type { WalletContainer } from "@/types/lifeos";
+import type { MoneyInflowSource, WalletContainer } from "@/types/lifeos";
 
 import {
   buildWalletSummary,
   formatMoneyAmount,
   type WalletSummary,
 } from "./insights";
+import { applyMoneyInflowManualDeposit } from "./income-source-actions";
+import { IncomeSourcePanel } from "./IncomeSourcePanel";
 import styles from "./finance-management.module.css";
 
 export type FinanceManagementPanelProps = {
   containers: WalletContainer[];
   onSaveContainer: (container: WalletContainer) => Promise<void> | void;
   onDeleteContainer: (containerId: string) => Promise<void> | void;
+  incomeSources?: MoneyInflowSource[];
+  onSaveIncomeSource?: (source: MoneyInflowSource) => Promise<void> | void;
+  onDeleteIncomeSource?: (sourceId: string) => Promise<void> | void;
   onBack: () => void;
   now?: () => Date;
   createContainerId?: () => string;
+  createIncomeSourceId?: () => string;
 };
 
 type WalletFormState = {
@@ -42,7 +48,6 @@ const CONTAINER_COLORS = [
 const FUTURE_STRUCTURES = [
   "金鹅账户",
   "梦想账户",
-  "金钱流入来源",
   "日常开销池",
   "财富流动日志",
 ];
@@ -60,9 +65,13 @@ export function FinanceManagementPanel({
   containers,
   onSaveContainer,
   onDeleteContainer,
+  incomeSources = [],
+  onSaveIncomeSource = noopSaveIncomeSource,
+  onDeleteIncomeSource = noopDeleteIncomeSource,
   onBack,
   now = () => new Date(),
   createContainerId = createDefaultContainerId,
+  createIncomeSourceId,
 }: FinanceManagementPanelProps) {
   const [savedContainers, setSavedContainers] = useState<WalletContainer[]>([]);
   const [deletedContainerIds, setDeletedContainerIds] = useState<string[]>([]);
@@ -126,6 +135,31 @@ export function FinanceManagementPanel({
     setFormState((current) =>
       current?.id === container.id ? null : current,
     );
+  }
+
+  async function handleDepositIncomeSource(
+    source: MoneyInflowSource,
+    variableAmount?: number,
+  ) {
+    const result = applyMoneyInflowManualDeposit({
+      source,
+      walletContainers: localContainers,
+      variableAmount,
+      now,
+    });
+
+    if (result.status !== "deposited") {
+      return;
+    }
+
+    await onSaveContainer(result.updatedContainer);
+    setDeletedContainerIds((current) =>
+      current.filter((containerId) => containerId !== result.updatedContainer.id),
+    );
+    setSavedContainers((current) => [
+      ...current.filter((container) => container.id !== result.updatedContainer.id),
+      result.updatedContainer,
+    ]);
   }
 
   return (
@@ -281,6 +315,16 @@ export function FinanceManagementPanel({
           ) : null}
         </Panel>
 
+        <IncomeSourcePanel
+          containers={localContainers}
+          createSourceId={createIncomeSourceId}
+          now={now}
+          onDeleteSource={onDeleteIncomeSource}
+          onDepositSource={handleDepositIncomeSource}
+          onSaveSource={onSaveIncomeSource}
+          sources={incomeSources}
+        />
+
         <Panel title="财务系统未来结构">
           <ul className={styles.futureList}>
             {FUTURE_STRUCTURES.map((structure) => (
@@ -380,6 +424,10 @@ function createDefaultContainerId(): string {
 
   return `wallet-container-${Date.now()}`;
 }
+
+function noopSaveIncomeSource() {}
+
+function noopDeleteIncomeSource() {}
 
 function formatPercentage(value: number): string {
   return `${new Intl.NumberFormat("zh-CN", {

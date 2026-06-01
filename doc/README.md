@@ -30,6 +30,10 @@ doc/
     design.md
     prompt.md
     tasks/
+  v1.4.1/
+    design.md
+    prompt.md
+    tasks/
   roadmap/
   decisions/
 ```
@@ -40,10 +44,10 @@ doc/
 
 当前版本的主要入口：
 
-- 产品与技术设计：`doc/v1.4/design.md`
-- Agent 实现提示词：`doc/v1.4/prompt.md`
-- 模块任务拆分：`doc/v1.4/tasks/`
-- 模块完成进度：`doc/v1.4/tasks/progress.md`
+- 产品与技术设计：`doc/v1.4.1/design.md`
+- Agent 实现提示词：`doc/v1.4.1/prompt.md`
+- 模块任务拆分：`doc/v1.4.1/tasks/`
+- 模块完成进度：`doc/v1.4.1/tasks/progress.md`
 
 ## 版本目录
 

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type {
   EcosystemObservation,
   EnergyObservation,
+  MoneyInflowSource,
   OnboardingAnswerRecord,
   StartupScanProfile,
   WalletContainer,
@@ -11,15 +12,18 @@ import {
   createLifeOSLocalDatabase,
   deleteEcosystemObservation,
   deleteEnergyObservation,
+  deleteMoneyInflowSource,
   deleteWalletContainer,
   readEcosystemObservations,
   readEnergyObservations,
   readLifeOSLocalData,
+  readMoneyInflowSources,
   readOnboardingAnswerRecord,
   readStartupScanProfile,
   readWalletContainers,
   saveEcosystemObservation,
   saveEnergyObservation,
+  saveMoneyInflowSource,
   saveOnboardingAnswerRecord,
   saveStartupScanProfile,
   saveWalletContainer,
@@ -125,6 +129,25 @@ const walletContainer = (
   ...overrides,
 });
 
+const moneyInflowSource = (
+  overrides: Partial<MoneyInflowSource> = {},
+): MoneyInflowSource => ({
+  id: "salary-source",
+  name: "固定工资",
+  amountPattern: {
+    kind: "fixed",
+    amount: 12000,
+  },
+  frequencyPattern: {
+    kind: "fixed",
+    interval: "monthly",
+  },
+  targetWalletContainerId: "wallet-container-1",
+  createdAt: "2026-05-21T08:00:00.000Z",
+  updatedAt: "2026-05-21T08:00:00.000Z",
+  ...overrides,
+});
+
 describe("LifeOS local data storage", () => {
   it("returns an empty local data snapshot before anything is saved", async () => {
     const database = createTestDatabase();
@@ -164,6 +187,7 @@ describe("LifeOS local data storage", () => {
     await saveEcosystemObservation(database, ecosystemObservation());
     await saveEnergyObservation(database, energyObservation());
     await saveWalletContainer(database, walletContainer());
+    await saveMoneyInflowSource(database, moneyInflowSource());
 
     await clearLifeOSLocalData(database);
 
@@ -174,6 +198,7 @@ describe("LifeOS local data storage", () => {
     await expect(readEcosystemObservations(database)).resolves.toEqual([]);
     await expect(readEnergyObservations(database)).resolves.toEqual([]);
     await expect(readWalletContainers(database)).resolves.toEqual([]);
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([]);
   });
 
   it("saves ecosystem observations with semantic snapshots", async () => {
@@ -517,5 +542,113 @@ describe("LifeOS local data storage", () => {
     await expect(readWalletContainers(database)).resolves.toEqual([
       debtContainer,
     ]);
+  });
+
+  it("saves and reads money inflow sources", async () => {
+    const database = createTestDatabase();
+    const source = moneyInflowSource({
+      note: "每月手动确认到账。",
+    });
+
+    await saveMoneyInflowSource(database, source);
+
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([source]);
+  });
+
+  it("overwrites a money inflow source when the same id is saved again", async () => {
+    const database = createTestDatabase();
+    const firstSource = moneyInflowSource({
+      id: "same-income-source",
+      name: "旧来源",
+      updatedAt: "2026-05-21T08:00:00.000Z",
+    });
+    const overwrittenSource = moneyInflowSource({
+      id: "same-income-source",
+      name: "新来源",
+      amountPattern: {
+        kind: "fixed",
+        amount: 16000,
+      },
+      updatedAt: "2026-05-21T09:00:00.000Z",
+    });
+
+    await saveMoneyInflowSource(database, firstSource);
+    await saveMoneyInflowSource(database, overwrittenSource);
+
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([
+      overwrittenSource,
+    ]);
+  });
+
+  it("reads all money inflow sources ordered by creation time", async () => {
+    const database = createTestDatabase();
+    const secondSource = moneyInflowSource({
+      id: "second-income-source",
+      name: "第二个来源",
+      createdAt: "2026-05-21T09:00:00.000Z",
+      updatedAt: "2026-05-21T09:00:00.000Z",
+    });
+    const firstSource = moneyInflowSource({
+      id: "first-income-source",
+      name: "第一个来源",
+      createdAt: "2026-05-21T08:00:00.000Z",
+      updatedAt: "2026-05-21T08:00:00.000Z",
+    });
+
+    await saveMoneyInflowSource(database, secondSource);
+    await saveMoneyInflowSource(database, firstSource);
+
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([
+      firstSource,
+      secondSource,
+    ]);
+  });
+
+  it("deletes a money inflow source by id", async () => {
+    const database = createTestDatabase();
+    const deletedSource = moneyInflowSource({ id: "income-source-to-delete" });
+    const keptSource = moneyInflowSource({
+      id: "income-source-to-keep",
+      name: "保留收入来源",
+    });
+
+    await saveMoneyInflowSource(database, deletedSource);
+    await saveMoneyInflowSource(database, keptSource);
+
+    await deleteMoneyInflowSource(database, "income-source-to-delete");
+
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([
+      keptSource,
+    ]);
+  });
+
+  it("saves and reads variable amount money inflow sources", async () => {
+    const database = createTestDatabase();
+    const source = moneyInflowSource({
+      id: "variable-amount-source",
+      name: "平台收入",
+      amountPattern: {
+        kind: "variable",
+      },
+    });
+
+    await saveMoneyInflowSource(database, source);
+
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([source]);
+  });
+
+  it("saves and reads variable frequency money inflow sources", async () => {
+    const database = createTestDatabase();
+    const source = moneyInflowSource({
+      id: "variable-frequency-source",
+      name: "临时项目",
+      frequencyPattern: {
+        kind: "variable",
+      },
+    });
+
+    await saveMoneyInflowSource(database, source);
+
+    await expect(readMoneyInflowSources(database)).resolves.toEqual([source]);
   });
 });

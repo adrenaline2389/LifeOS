@@ -23,7 +23,9 @@
 
 .header p,
 .walletIntro p,
+.incomeIntro p,
 .containerHeader p,
+.incomeSourceHeader p,
 .stateNote {
   line-height: 1.6;
   margin: 0;
@@ -34,9 +36,12 @@
 }
 
 .walletIntro,
+.incomeIntro,
 .editorHeader,
 .containerHeader,
+.incomeSourceHeader,
 .containerActions,
+.formActions,
 .futureList li,
 .legendList li {
   align-items: center;
@@ -45,6 +50,7 @@
 }
 
 .walletIntro,
+.incomeIntro,
 .editorHeader {
   justify-content: space-between;
 }
@@ -100,6 +106,7 @@
 
 .legendList,
 .containerList,
+.incomeSourceList,
 .futureList {
   display: grid;
   gap: 0.75rem;
@@ -118,6 +125,7 @@
 }
 
 .containerCard,
+.incomeSourceCard,
 .emptyContainer,
 .editor,
 .futureList li,
@@ -144,7 +152,22 @@
   gap: 0.75rem;
 }
 
+.incomeSourceList {
+  margin-top: 1rem;
+}
+
+.incomeSourceCard {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .containerHeader {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.incomeSourceHeader {
   align-items: flex-start;
   justify-content: space-between;
 }
@@ -154,13 +177,42 @@
   min-width: 0;
 }
 
-.containerHeader p {
+.incomeSourceHeader > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.containerHeader p,
+.incomeSourceHeader p {
   color: #4a4a44;
 }
 
-.containerActions {
+.containerActions,
+.formActions {
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.incomeSourceActions {
+  align-items: flex-end;
+  flex-direction: column;
+  grid-column: 2;
+  grid-row: 1;
+  justify-content: flex-start;
+}
+
+.depositButton {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 3.25rem;
+  min-width: 3.25rem;
+  padding: 0;
+}
+
+.depositButtonGlyph {
+  display: inline-block;
+  transform: translateY(-0.08em);
 }
 
 .balanceText {
@@ -211,6 +263,7 @@
   }
 
   .walletIntro,
+  .incomeIntro,
   .editorHeader {
     align-items: flex-start;
     flex-direction: column;
@@ -219,5 +272,15 @@
   .donut {
     justify-self: center;
     width: min(100%, 14rem);
+  }
+
+  .incomeSourceCard {
+    grid-template-columns: 1fr;
+  }
+
+  .incomeSourceActions {
+    align-items: flex-end;
+    grid-column: 1;
+    grid-row: auto;
   }
 }

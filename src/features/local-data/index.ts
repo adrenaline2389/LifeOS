@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 import type {
   EcosystemObservation,
   EnergyObservation,
+  MoneyInflowSource,
   OnboardingAnswerRecord,
   StartupScanProfile,
   WalletContainer,
@@ -33,6 +34,8 @@ type StoredEnergyObservation = EnergyObservation & {
 
 type StoredWalletContainer = WalletContainer;
 
+type StoredMoneyInflowSource = MoneyInflowSource;
+
 export type LifeOSLocalDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
   startupScanProfile: StartupScanProfile | null;
@@ -54,6 +57,7 @@ export class LifeOSLocalDatabase extends Dexie {
   ecosystemObservations!: Table<StoredEcosystemObservation, string>;
   energyObservations!: Table<StoredEnergyObservation, string>;
   walletContainers!: Table<StoredWalletContainer, string>;
+  moneyInflowSources!: Table<StoredMoneyInflowSource, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -84,6 +88,14 @@ export class LifeOSLocalDatabase extends Dexie {
       ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
       energyObservations: "id, observedAt, dimensionId, updatedAt",
       walletContainers: "id, createdAt, updatedAt",
+    });
+    this.version(6).stores({
+      onboardingAnswers: "id, updatedAt",
+      startupScanProfiles: "id, updatedAt",
+      ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
+      energyObservations: "id, observedAt, dimensionId, updatedAt",
+      walletContainers: "id, createdAt, updatedAt",
+      moneyInflowSources: "id, createdAt, updatedAt, targetWalletContainerId",
     });
   }
 }
@@ -258,6 +270,37 @@ export const readWalletContainers = async (
   }));
 };
 
+export const saveMoneyInflowSource = async (
+  database: LifeOSLocalDatabase,
+  source: MoneyInflowSource,
+): Promise<void> => {
+  await database.moneyInflowSources.put(source);
+};
+
+export const deleteMoneyInflowSource = async (
+  database: LifeOSLocalDatabase,
+  sourceId: string,
+): Promise<void> => {
+  await database.moneyInflowSources.delete(sourceId);
+};
+
+export const readMoneyInflowSources = async (
+  database: LifeOSLocalDatabase,
+): Promise<MoneyInflowSource[]> => {
+  const sources = await database.moneyInflowSources.orderBy("createdAt").toArray();
+
+  return sources.map((source) => ({
+    id: source.id,
+    name: source.name,
+    amountPattern: source.amountPattern,
+    frequencyPattern: source.frequencyPattern,
+    targetWalletContainerId: source.targetWalletContainerId,
+    ...(source.note ? { note: source.note } : {}),
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
+  }));
+};
+
 export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
@@ -276,6 +319,7 @@ export const clearLifeOSLocalData = async (
       database.ecosystemObservations,
       database.energyObservations,
       database.walletContainers,
+      database.moneyInflowSources,
     ],
     async () => {
       await database.onboardingAnswers.clear();
@@ -283,6 +327,7 @@ export const clearLifeOSLocalData = async (
       await database.ecosystemObservations.clear();
       await database.energyObservations.clear();
       await database.walletContainers.clear();
+      await database.moneyInflowSources.clear();
     },
   );
 };

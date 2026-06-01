@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { WalletContainer } from "@/types/lifeos";
+import type { MoneyInflowSource, WalletContainer } from "@/types/lifeos";
 
 import { FinanceManagementPanel } from "./FinanceManagementPanel";
 
@@ -16,6 +16,19 @@ const walletContainer = (
   balance: 120,
   color: "#2f9be7",
   note: "桌面手动快照",
+  createdAt: "2026-05-26T08:00:00.000",
+  updatedAt: "2026-05-26T08:00:00.000",
+  ...overrides,
+});
+
+const incomeSource = (
+  overrides: Partial<MoneyInflowSource> = {},
+): MoneyInflowSource => ({
+  id: "income-1",
+  name: "固定工资",
+  amountPattern: { kind: "fixed", amount: 300 },
+  frequencyPattern: { kind: "fixed", interval: "monthly" },
+  targetWalletContainerId: "wallet-1",
   createdAt: "2026-05-26T08:00:00.000",
   updatedAt: "2026-05-26T08:00:00.000",
   ...overrides,
@@ -44,6 +57,14 @@ describe("FinanceManagementPanel", () => {
     expect(wallet).toHaveTextContent("现金口袋");
     expect(wallet).toHaveTextContent("桌面手动快照");
     expect(within(wallet).getByRole("img", { name: "钱包余额环形图" })).toBeInTheDocument();
+
+    const incomeSources = screen.getByRole("region", { name: "收入来源" });
+    expect(incomeSources).toHaveTextContent("这些是你手动维护的本地收入来源。");
+
+    expect(
+      wallet.compareDocumentPosition(incomeSources) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("lets the user create a wallet container", async () => {
@@ -138,6 +159,68 @@ describe("FinanceManagementPanel", () => {
     expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("0");
   });
 
+  it("deposits a fixed amount income source into its target wallet", async () => {
+    const user = userEvent.setup();
+    const onSaveContainer = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <FinanceManagementPanel
+        containers={[walletContainer({ balance: 120 })]}
+        incomeSources={[incomeSource({ amountPattern: { kind: "fixed", amount: 80 } })]}
+        onBack={vi.fn()}
+        onDeleteContainer={vi.fn()}
+        onDeleteIncomeSource={vi.fn()}
+        onSaveContainer={onSaveContainer}
+        onSaveIncomeSource={vi.fn()}
+        now={now}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "手动入账固定工资" }));
+
+    expect(onSaveContainer).toHaveBeenCalledWith({
+      ...walletContainer({ balance: 120 }),
+      balance: 200,
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("200");
+  });
+
+  it("asks for a received amount before depositing a variable amount income source", async () => {
+    const user = userEvent.setup();
+    const onSaveContainer = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <FinanceManagementPanel
+        containers={[walletContainer({ balance: 120 })]}
+        incomeSources={[
+          incomeSource({
+            name: "平台收入",
+            amountPattern: { kind: "variable" },
+            frequencyPattern: { kind: "variable" },
+          }),
+        ]}
+        onBack={vi.fn()}
+        onDeleteContainer={vi.fn()}
+        onDeleteIncomeSource={vi.fn()}
+        onSaveContainer={onSaveContainer}
+        onSaveIncomeSource={vi.fn()}
+        now={now}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "手动入账平台收入" }));
+    await user.type(screen.getByLabelText("本次到账金额"), "75.5");
+    await user.click(screen.getByRole("button", { name: "确认入账" }));
+
+    expect(onSaveContainer).toHaveBeenCalledWith({
+      ...walletContainer({ balance: 120 }),
+      balance: 195.5,
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("195.5");
+  });
+
   it("shows positive distribution percentages only for positive containers", () => {
     render(
       <FinanceManagementPanel
@@ -216,9 +299,9 @@ describe("FinanceManagementPanel", () => {
 
     expect(future).toHaveTextContent("金鹅账户后续开放");
     expect(future).toHaveTextContent("梦想账户后续开放");
-    expect(future).toHaveTextContent("金钱流入来源后续开放");
     expect(future).toHaveTextContent("日常开销池后续开放");
     expect(future).toHaveTextContent("财富流动日志后续开放");
+    expect(future).not.toHaveTextContent("金钱流入来源");
     expect(within(future).queryByRole("button")).not.toBeInTheDocument();
   });
 

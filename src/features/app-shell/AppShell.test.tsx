@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   EcosystemObservation,
   EnergyObservation,
+  MoneyInflowSource,
   OnboardingAnswerRecord,
   StartupScanProfile,
   WalletContainer,
@@ -97,19 +98,23 @@ function createAdapter(
   ecosystemObservations: EcosystemObservation[] = [],
   energyObservations: EnergyObservation[] = [],
   walletContainers: WalletContainer[] = [],
+  incomeSources: MoneyInflowSource[] = [],
 ): AppShellDataAdapter {
   return {
     read: vi.fn().mockResolvedValue(snapshot),
     readEcosystemObservations: vi.fn().mockResolvedValue(ecosystemObservations),
     readEnergyObservations: vi.fn().mockResolvedValue(energyObservations),
     readWalletContainers: vi.fn().mockResolvedValue(walletContainers),
+    readMoneyInflowSources: vi.fn().mockResolvedValue(incomeSources),
     deleteEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     deleteEnergyObservation: vi.fn().mockResolvedValue(undefined),
     deleteWalletContainer: vi.fn().mockResolvedValue(undefined),
+    deleteMoneyInflowSource: vi.fn().mockResolvedValue(undefined),
     saveOnboardingAnswer: vi.fn().mockResolvedValue(undefined),
     saveEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     saveEnergyObservation: vi.fn().mockResolvedValue(undefined),
     saveWalletContainer: vi.fn().mockResolvedValue(undefined),
+    saveMoneyInflowSource: vi.fn().mockResolvedValue(undefined),
     saveStartupScanProfile: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
@@ -264,6 +269,17 @@ describe("AppShell", () => {
       [],
       [],
       [walletContainer],
+      [
+        {
+          id: "salary-source",
+          name: "固定工资",
+          amountPattern: { kind: "fixed", amount: 1000 },
+          frequencyPattern: { kind: "fixed", interval: "monthly" },
+          targetWalletContainerId: "wallet-bank",
+          createdAt: "2026-05-27T08:00:00.000",
+          updatedAt: "2026-05-27T08:00:00.000",
+        },
+      ],
     );
 
     render(<AppShell dataAdapter={adapter} />);
@@ -274,7 +290,9 @@ describe("AppShell", () => {
 
     expect(await screen.findByText("我的钱包")).toBeInTheDocument();
     expect(screen.getAllByText("银行卡").length).toBeGreaterThan(0);
+    expect(screen.getByText("固定工资")).toBeInTheDocument();
     expect(adapter.readWalletContainers).toHaveBeenCalledOnce();
+    expect(adapter.readMoneyInflowSources).toHaveBeenCalledOnce();
 
     await user.click(screen.getByRole("button", { name: "返回启动面板" }));
 
