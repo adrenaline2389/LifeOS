@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type {
+  DailyExpenseEntry,
+  DailyExpensePool,
   EcosystemObservation,
   EnergyObservation,
   MoneyInflowSource,
@@ -99,6 +101,8 @@ function createAdapter(
   energyObservations: EnergyObservation[] = [],
   walletContainers: WalletContainer[] = [],
   incomeSources: MoneyInflowSource[] = [],
+  dailyExpensePool: DailyExpensePool | null = null,
+  dailyExpenseEntries: DailyExpenseEntry[] = [],
 ): AppShellDataAdapter {
   return {
     read: vi.fn().mockResolvedValue(snapshot),
@@ -106,15 +110,20 @@ function createAdapter(
     readEnergyObservations: vi.fn().mockResolvedValue(energyObservations),
     readWalletContainers: vi.fn().mockResolvedValue(walletContainers),
     readMoneyInflowSources: vi.fn().mockResolvedValue(incomeSources),
+    readDailyExpensePool: vi.fn().mockResolvedValue(dailyExpensePool),
+    readDailyExpenseEntries: vi.fn().mockResolvedValue(dailyExpenseEntries),
     deleteEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     deleteEnergyObservation: vi.fn().mockResolvedValue(undefined),
     deleteWalletContainer: vi.fn().mockResolvedValue(undefined),
     deleteMoneyInflowSource: vi.fn().mockResolvedValue(undefined),
+    deleteDailyExpenseEntry: vi.fn().mockResolvedValue(undefined),
     saveOnboardingAnswer: vi.fn().mockResolvedValue(undefined),
     saveEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     saveEnergyObservation: vi.fn().mockResolvedValue(undefined),
     saveWalletContainer: vi.fn().mockResolvedValue(undefined),
     saveMoneyInflowSource: vi.fn().mockResolvedValue(undefined),
+    saveDailyExpensePool: vi.fn().mockResolvedValue(undefined),
+    saveDailyExpenseEntry: vi.fn().mockResolvedValue(undefined),
     saveStartupScanProfile: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
@@ -280,6 +289,26 @@ describe("AppShell", () => {
           updatedAt: "2026-05-27T08:00:00.000",
         },
       ],
+      {
+        id: "default",
+        balance: 120,
+        lastTransferAmount: 300,
+        lastTransferAt: "2026-05-27T08:20:00.000",
+        lastTransferWalletContainerId: "wallet-bank",
+        lastTransferWalletContainerNameSnapshot: "银行卡",
+        createdAt: "2026-05-27T08:00:00.000",
+        updatedAt: "2026-05-27T08:20:00.000",
+      },
+      [
+        {
+          id: "expense-breakfast",
+          amount: 18,
+          note: "早餐",
+          spentAt: "2026-05-27T08:30:00.000",
+          createdAt: "2026-05-27T08:30:00.000",
+          updatedAt: "2026-05-27T08:30:00.000",
+        },
+      ],
     );
 
     render(<AppShell dataAdapter={adapter} />);
@@ -291,8 +320,11 @@ describe("AppShell", () => {
     expect(await screen.findByText("我的钱包")).toBeInTheDocument();
     expect(screen.getAllByText("银行卡").length).toBeGreaterThan(0);
     expect(screen.getByText("固定工资")).toBeInTheDocument();
+    expect(screen.getByText("早餐")).toBeInTheDocument();
     expect(adapter.readWalletContainers).toHaveBeenCalledOnce();
     expect(adapter.readMoneyInflowSources).toHaveBeenCalledOnce();
+    expect(adapter.readDailyExpensePool).toHaveBeenCalledOnce();
+    expect(adapter.readDailyExpenseEntries).toHaveBeenCalledOnce();
 
     await user.click(screen.getByRole("button", { name: "返回启动面板" }));
 

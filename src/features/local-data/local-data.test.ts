@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type {
+  DailyExpenseEntry,
+  DailyExpensePool,
   EcosystemObservation,
   EnergyObservation,
   MoneyInflowSource,
@@ -12,8 +14,11 @@ import {
   createLifeOSLocalDatabase,
   deleteEcosystemObservation,
   deleteEnergyObservation,
+  deleteDailyExpenseEntry,
   deleteMoneyInflowSource,
   deleteWalletContainer,
+  readDailyExpenseEntries,
+  readDailyExpensePool,
   readEcosystemObservations,
   readEnergyObservations,
   readLifeOSLocalData,
@@ -23,6 +28,8 @@ import {
   readWalletContainers,
   saveEcosystemObservation,
   saveEnergyObservation,
+  saveDailyExpenseEntry,
+  saveDailyExpensePool,
   saveMoneyInflowSource,
   saveOnboardingAnswerRecord,
   saveStartupScanProfile,
@@ -148,6 +155,33 @@ const moneyInflowSource = (
   ...overrides,
 });
 
+const dailyExpensePool = (
+  overrides: Partial<DailyExpensePool> = {},
+): DailyExpensePool => ({
+  id: "default",
+  balance: 800,
+  selectedWalletContainerId: "wallet-container-1",
+  lastTransferAmount: 1200,
+  lastTransferAt: "2026-06-02T08:00:00.000Z",
+  lastTransferWalletContainerId: "wallet-container-1",
+  lastTransferWalletContainerNameSnapshot: "日常账户",
+  createdAt: "2026-06-02T08:00:00.000Z",
+  updatedAt: "2026-06-02T08:00:00.000Z",
+  ...overrides,
+});
+
+const dailyExpenseEntry = (
+  overrides: Partial<DailyExpenseEntry> = {},
+): DailyExpenseEntry => ({
+  id: "daily-expense-entry-1",
+  amount: 68,
+  note: "早餐和交通",
+  spentAt: "2026-06-02T09:30:00.000Z",
+  createdAt: "2026-06-02T09:30:00.000Z",
+  updatedAt: "2026-06-02T09:30:00.000Z",
+  ...overrides,
+});
+
 describe("LifeOS local data storage", () => {
   it("returns an empty local data snapshot before anything is saved", async () => {
     const database = createTestDatabase();
@@ -188,6 +222,8 @@ describe("LifeOS local data storage", () => {
     await saveEnergyObservation(database, energyObservation());
     await saveWalletContainer(database, walletContainer());
     await saveMoneyInflowSource(database, moneyInflowSource());
+    await saveDailyExpensePool(database, dailyExpensePool());
+    await saveDailyExpenseEntry(database, dailyExpenseEntry());
 
     await clearLifeOSLocalData(database);
 
@@ -199,6 +235,8 @@ describe("LifeOS local data storage", () => {
     await expect(readEnergyObservations(database)).resolves.toEqual([]);
     await expect(readWalletContainers(database)).resolves.toEqual([]);
     await expect(readMoneyInflowSources(database)).resolves.toEqual([]);
+    await expect(readDailyExpensePool(database)).resolves.toBeNull();
+    await expect(readDailyExpenseEntries(database)).resolves.toEqual([]);
   });
 
   it("saves ecosystem observations with semantic snapshots", async () => {
@@ -650,5 +688,76 @@ describe("LifeOS local data storage", () => {
     await saveMoneyInflowSource(database, source);
 
     await expect(readMoneyInflowSources(database)).resolves.toEqual([source]);
+  });
+
+  it("saves and reads the daily expense pool", async () => {
+    const database = createTestDatabase();
+    const pool = dailyExpensePool();
+
+    await saveDailyExpensePool(database, pool);
+
+    await expect(readDailyExpensePool(database)).resolves.toEqual(pool);
+  });
+
+  it("overwrites the daily expense pool when the default id is saved again", async () => {
+    const database = createTestDatabase();
+    const firstPool = dailyExpensePool({
+      balance: 800,
+      updatedAt: "2026-06-02T08:00:00.000Z",
+    });
+    const overwrittenPool = dailyExpensePool({
+      balance: 620,
+      lastTransferAmount: 500,
+      updatedAt: "2026-06-02T12:00:00.000Z",
+    });
+
+    await saveDailyExpensePool(database, firstPool);
+    await saveDailyExpensePool(database, overwrittenPool);
+
+    await expect(readDailyExpensePool(database)).resolves.toEqual(overwrittenPool);
+  });
+
+  it("saves and reads daily expense entries ordered by spent time", async () => {
+    const database = createTestDatabase();
+    const secondEntry = dailyExpenseEntry({
+      id: "second-expense-entry",
+      amount: 88,
+      note: "周二",
+      spentAt: "2026-06-03T20:00:00.000Z",
+      createdAt: "2026-06-03T20:00:00.000Z",
+      updatedAt: "2026-06-03T20:00:00.000Z",
+    });
+    const firstEntry = dailyExpenseEntry({
+      id: "first-expense-entry",
+      amount: 42,
+      note: "周一",
+      spentAt: "2026-06-02T20:00:00.000Z",
+      createdAt: "2026-06-02T20:00:00.000Z",
+      updatedAt: "2026-06-02T20:00:00.000Z",
+    });
+
+    await saveDailyExpenseEntry(database, secondEntry);
+    await saveDailyExpenseEntry(database, firstEntry);
+
+    await expect(readDailyExpenseEntries(database)).resolves.toEqual([
+      firstEntry,
+      secondEntry,
+    ]);
+  });
+
+  it("deletes a daily expense entry by id", async () => {
+    const database = createTestDatabase();
+    const deletedEntry = dailyExpenseEntry({ id: "expense-entry-to-delete" });
+    const keptEntry = dailyExpenseEntry({
+      id: "expense-entry-to-keep",
+      note: "保留的一笔消费",
+    });
+
+    await saveDailyExpenseEntry(database, deletedEntry);
+    await saveDailyExpenseEntry(database, keptEntry);
+
+    await deleteDailyExpenseEntry(database, "expense-entry-to-delete");
+
+    await expect(readDailyExpenseEntries(database)).resolves.toEqual([keptEntry]);
   });
 });

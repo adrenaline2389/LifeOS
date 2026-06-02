@@ -4,7 +4,12 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 
 import { Button, Panel, StatusLabel, WindowFrame } from "@/features/retro-ui";
-import type { MoneyInflowSource, WalletContainer } from "@/types/lifeos";
+import type {
+  DailyExpenseEntry,
+  DailyExpensePool,
+  MoneyInflowSource,
+  WalletContainer,
+} from "@/types/lifeos";
 
 import {
   buildWalletSummary,
@@ -12,6 +17,7 @@ import {
   type WalletSummary,
 } from "./insights";
 import { applyMoneyInflowManualDeposit } from "./income-source-actions";
+import { DailyExpensePoolPanel } from "./DailyExpensePoolPanel";
 import { IncomeSourcePanel } from "./IncomeSourcePanel";
 import styles from "./finance-management.module.css";
 
@@ -22,10 +28,16 @@ export type FinanceManagementPanelProps = {
   incomeSources?: MoneyInflowSource[];
   onSaveIncomeSource?: (source: MoneyInflowSource) => Promise<void> | void;
   onDeleteIncomeSource?: (sourceId: string) => Promise<void> | void;
+  dailyExpensePool?: DailyExpensePool | null;
+  dailyExpenseEntries?: DailyExpenseEntry[];
+  onSaveDailyExpensePool?: (pool: DailyExpensePool) => Promise<void> | void;
+  onSaveDailyExpenseEntry?: (entry: DailyExpenseEntry) => Promise<void> | void;
+  onDeleteDailyExpenseEntry?: (entryId: string) => Promise<void> | void;
   onBack: () => void;
   now?: () => Date;
   createContainerId?: () => string;
   createIncomeSourceId?: () => string;
+  createDailyExpenseEntryId?: () => string;
 };
 
 type WalletFormState = {
@@ -45,12 +57,7 @@ const CONTAINER_COLORS = [
   { value: "#8f7ac8", label: "紫灰" },
 ];
 
-const FUTURE_STRUCTURES = [
-  "金鹅账户",
-  "梦想账户",
-  "日常开销池",
-  "财富流动日志",
-];
+const FUTURE_STRUCTURES = ["金鹅账户", "梦想账户", "财富流动日志"];
 
 const EMPTY_FORM: WalletFormState = {
   id: null,
@@ -68,10 +75,16 @@ export function FinanceManagementPanel({
   incomeSources = [],
   onSaveIncomeSource = noopSaveIncomeSource,
   onDeleteIncomeSource = noopDeleteIncomeSource,
+  dailyExpensePool = null,
+  dailyExpenseEntries = [],
+  onSaveDailyExpensePool = noopSaveDailyExpensePool,
+  onSaveDailyExpenseEntry = noopSaveDailyExpenseEntry,
+  onDeleteDailyExpenseEntry = noopDeleteDailyExpenseEntry,
   onBack,
   now = () => new Date(),
   createContainerId = createDefaultContainerId,
   createIncomeSourceId,
+  createDailyExpenseEntryId,
 }: FinanceManagementPanelProps) {
   const [savedContainers, setSavedContainers] = useState<WalletContainer[]>([]);
   const [deletedContainerIds, setDeletedContainerIds] = useState<string[]>([]);
@@ -113,14 +126,7 @@ export function FinanceManagementPanel({
       updatedAt: timestamp,
     };
 
-    await onSaveContainer(container);
-    setDeletedContainerIds((current) =>
-      current.filter((containerId) => containerId !== container.id),
-    );
-    setSavedContainers((current) => [
-      ...current.filter((candidate) => candidate.id !== container.id),
-      container,
-    ]);
+    await persistWalletContainer(container);
     setFormState(null);
   }
 
@@ -152,13 +158,17 @@ export function FinanceManagementPanel({
       return;
     }
 
-    await onSaveContainer(result.updatedContainer);
+    await persistWalletContainer(result.updatedContainer);
+  }
+
+  async function persistWalletContainer(container: WalletContainer) {
+    await onSaveContainer(container);
     setDeletedContainerIds((current) =>
-      current.filter((containerId) => containerId !== result.updatedContainer.id),
+      current.filter((containerId) => containerId !== container.id),
     );
     setSavedContainers((current) => [
-      ...current.filter((container) => container.id !== result.updatedContainer.id),
-      result.updatedContainer,
+      ...current.filter((candidate) => candidate.id !== container.id),
+      container,
     ]);
   }
 
@@ -187,51 +197,15 @@ export function FinanceManagementPanel({
 
           <div className={styles.walletGrid}>
             <WalletDonut summary={walletSummary} />
-            <WalletLegend summary={walletSummary} />
+            <WalletLegend
+              containers={localContainers}
+              onDeleteContainer={handleDelete}
+              onEditContainer={(container) =>
+                setFormState(containerToFormState(container))
+              }
+              summary={walletSummary}
+            />
           </div>
-
-          <ul className={styles.containerList}>
-            {localContainers.length > 0 ? (
-              localContainers.map((container) => (
-                <li className={styles.containerCard} key={container.id}>
-                  <div className={styles.containerHeader}>
-                    <span
-                      aria-hidden="true"
-                      className={styles.colorChip}
-                      style={{ backgroundColor: container.color }}
-                    />
-                    <div>
-                      <strong>{container.name}</strong>
-                      {container.note ? <p>{container.note}</p> : null}
-                    </div>
-                    <span className={styles.balanceText}>
-                      {formatMoneyAmount(container.balance)}
-                    </span>
-                  </div>
-                  <div className={styles.containerActions}>
-                    <Button
-                      aria-label={`编辑${container.name}`}
-                      onClick={() => setFormState(containerToFormState(container))}
-                      size="sm"
-                      variant="quiet"
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      aria-label={`删除${container.name}`}
-                      onClick={() => handleDelete(container)}
-                      size="sm"
-                      variant="danger"
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </li>
-              ))
-            ) : (
-              <li className={styles.emptyContainer}>尚未新建资金容器。</li>
-            )}
-          </ul>
 
           {formState ? (
             <form className={styles.editor} onSubmit={handleSave}>
@@ -325,6 +299,18 @@ export function FinanceManagementPanel({
           sources={incomeSources}
         />
 
+        <DailyExpensePoolPanel
+          createEntryId={createDailyExpenseEntryId}
+          entries={dailyExpenseEntries}
+          now={now}
+          onDeleteEntry={onDeleteDailyExpenseEntry}
+          onSaveEntry={onSaveDailyExpenseEntry}
+          onSavePool={onSaveDailyExpensePool}
+          onSaveWalletContainer={persistWalletContainer}
+          pool={dailyExpensePool}
+          walletContainers={localContainers}
+        />
+
         <Panel title="财务系统未来结构">
           <ul className={styles.futureList}>
             {FUTURE_STRUCTURES.map((structure) => (
@@ -367,27 +353,66 @@ function WalletDonut({ summary }: { summary: WalletSummary }) {
   );
 }
 
-function WalletLegend({ summary }: { summary: WalletSummary }) {
-  if (summary.status === "zero") {
-    return <p className={styles.stateNote}>还没有可分配余额快照</p>;
+function WalletLegend({
+  containers,
+  onDeleteContainer,
+  onEditContainer,
+  summary,
+}: {
+  containers: WalletContainer[];
+  onDeleteContainer: (container: WalletContainer) => void;
+  onEditContainer: (container: WalletContainer) => void;
+  summary: WalletSummary;
+}) {
+  if (containers.length === 0) {
+    return <p className={styles.stateNote}>尚未新建资金容器。</p>;
   }
 
-  if (summary.status === "negative") {
-    return <p className={styles.stateNote}>负余额会保留在列表中显示真实余额。</p>;
-  }
+  const percentages = new Map(
+    summary.distributionItems.map((item) => [item.containerId, item.percentage]),
+  );
 
   return (
     <ul className={styles.legendList}>
-      {summary.distributionItems.map((item) => (
-        <li key={item.containerId}>
-          <span
-            aria-hidden="true"
-            className={styles.colorChip}
-            style={{ backgroundColor: item.color }}
-          />
-          <span>{item.name}</span>
-          <span>{formatMoneyAmount(item.balance)}</span>
-          <strong>{formatPercentage(item.percentage)}</strong>
+      {containers.map((container) => (
+        <li key={container.id}>
+          <div className={styles.legendIdentity}>
+            <span
+              aria-hidden="true"
+              className={styles.colorChip}
+              style={{ backgroundColor: container.color }}
+            />
+            <div>
+              <strong>{container.name}</strong>
+              {container.note ? <p>{container.note}</p> : null}
+            </div>
+          </div>
+          <span className={styles.balanceText}>
+            {formatMoneyAmount(container.balance)}
+          </span>
+          <strong>
+            {percentages.has(container.id)
+              ? formatPercentage(percentages.get(container.id) ?? 0)
+              : "暂不计算"}
+          </strong>
+          <div className={styles.containerActions}>
+            <Button
+              aria-label={`编辑${container.name}`}
+              onClick={() => onEditContainer(container)}
+              size="sm"
+              variant="quiet"
+            >
+              编辑
+            </Button>
+            <Button
+              aria-label={`删除${container.name}`}
+              onClick={() => onDeleteContainer(container)}
+              size="sm"
+              variant="danger"
+            >
+              删除
+            </Button>
+          </div>
         </li>
       ))}
     </ul>
@@ -428,6 +453,12 @@ function createDefaultContainerId(): string {
 function noopSaveIncomeSource() {}
 
 function noopDeleteIncomeSource() {}
+
+function noopSaveDailyExpensePool() {}
+
+function noopSaveDailyExpenseEntry() {}
+
+function noopDeleteDailyExpenseEntry() {}
 
 function formatPercentage(value: number): string {
   return `${new Intl.NumberFormat("zh-CN", {

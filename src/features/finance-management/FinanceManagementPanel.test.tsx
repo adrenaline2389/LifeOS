@@ -2,7 +2,12 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { MoneyInflowSource, WalletContainer } from "@/types/lifeos";
+import type {
+  DailyExpenseEntry,
+  DailyExpensePool,
+  MoneyInflowSource,
+  WalletContainer,
+} from "@/types/lifeos";
 
 import { FinanceManagementPanel } from "./FinanceManagementPanel";
 
@@ -34,6 +39,33 @@ const incomeSource = (
   ...overrides,
 });
 
+const dailyExpensePool = (
+  overrides: Partial<DailyExpensePool> = {},
+): DailyExpensePool => ({
+  id: "default",
+  balance: 300,
+  selectedWalletContainerId: "wallet-1",
+  lastTransferAmount: 500,
+  lastTransferAt: "2026-05-26T08:00:00.000",
+  lastTransferWalletContainerId: "wallet-1",
+  lastTransferWalletContainerNameSnapshot: "现金口袋",
+  createdAt: "2026-05-26T08:00:00.000",
+  updatedAt: "2026-05-26T08:00:00.000",
+  ...overrides,
+});
+
+const dailyExpenseEntry = (
+  overrides: Partial<DailyExpenseEntry> = {},
+): DailyExpenseEntry => ({
+  id: "expense-1",
+  amount: 68,
+  note: "早餐和交通",
+  spentAt: "2026-05-27T08:30:00.000",
+  createdAt: "2026-05-27T08:30:00.000",
+  updatedAt: "2026-05-27T08:30:00.000",
+  ...overrides,
+});
+
 describe("FinanceManagementPanel", () => {
   it("renders the finance management page and wallet snapshot", () => {
     render(
@@ -61,8 +93,17 @@ describe("FinanceManagementPanel", () => {
     const incomeSources = screen.getByRole("region", { name: "收入来源" });
     expect(incomeSources).toHaveTextContent("这些是你手动维护的本地收入来源。");
 
+    const dailyExpense = screen.getByRole("region", { name: "日常开销池" });
+    expect(dailyExpense).not.toHaveTextContent(
+      "这是你手动划入、手动结算的本地日常开销池。",
+    );
+
     expect(
       wallet.compareDocumentPosition(incomeSources) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      incomeSources.compareDocumentPosition(dailyExpense) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
@@ -99,7 +140,9 @@ describe("FinanceManagementPanel", () => {
       createdAt: "2026-05-27T09:10:00.000",
       updatedAt: "2026-05-27T09:10:00.000",
     });
-    expect(screen.getByText("生活现金")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "我的钱包" }),
+    ).toHaveTextContent("生活现金");
     expect(screen.getByText("-35.5")).toBeInTheDocument();
   });
 
@@ -221,6 +264,75 @@ describe("FinanceManagementPanel", () => {
     expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("195.5");
   });
 
+  it("transfers money into the daily expense pool and refreshes wallet summary", async () => {
+    const user = userEvent.setup();
+    const onSaveContainer = vi.fn().mockResolvedValue(undefined);
+    const onSaveDailyExpensePool = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <FinanceManagementPanel
+        containers={[walletContainer({ balance: 1000 })]}
+        dailyExpenseEntries={[]}
+        dailyExpensePool={dailyExpensePool({ balance: 300 })}
+        onBack={vi.fn()}
+        onDeleteContainer={vi.fn()}
+        onDeleteDailyExpenseEntry={vi.fn()}
+        onDeleteIncomeSource={vi.fn()}
+        onSaveContainer={onSaveContainer}
+        onSaveDailyExpenseEntry={vi.fn()}
+        onSaveDailyExpensePool={onSaveDailyExpensePool}
+        onSaveIncomeSource={vi.fn()}
+        now={now}
+      />,
+    );
+
+    await user.clear(screen.getByLabelText("划入金额"));
+    await user.type(screen.getByLabelText("划入金额"), "250");
+    await user.click(screen.getByRole("button", { name: "划入开销池" }));
+
+    expect(onSaveContainer).toHaveBeenCalledWith({
+      ...walletContainer({ balance: 1000 }),
+      balance: 750,
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(onSaveDailyExpensePool).toHaveBeenCalledWith({
+      ...dailyExpensePool({ balance: 300 }),
+      balance: 550,
+      lastTransferAmount: 250,
+      lastTransferAt: "2026-05-27T09:10:00.000",
+      lastTransferWalletContainerId: "wallet-1",
+      lastTransferWalletContainerNameSnapshot: "现金口袋",
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("750");
+    expect(screen.getByRole("region", { name: "日常开销池" })).toHaveTextContent(
+      "550",
+    );
+  });
+
+  it("shows daily expense entries without treating them as future placeholders", () => {
+    render(
+      <FinanceManagementPanel
+        containers={[walletContainer()]}
+        dailyExpenseEntries={[dailyExpenseEntry()]}
+        dailyExpensePool={dailyExpensePool()}
+        onBack={vi.fn()}
+        onDeleteContainer={vi.fn()}
+        onDeleteDailyExpenseEntry={vi.fn()}
+        onDeleteIncomeSource={vi.fn()}
+        onSaveContainer={vi.fn()}
+        onSaveDailyExpenseEntry={vi.fn()}
+        onSaveDailyExpensePool={vi.fn()}
+        onSaveIncomeSource={vi.fn()}
+        now={now}
+      />,
+    );
+
+    const dailyExpense = screen.getByRole("region", { name: "日常开销池" });
+    expect(dailyExpense).toHaveTextContent("早餐和交通");
+    expect(dailyExpense).not.toHaveTextContent("后续开放");
+  });
+
   it("shows positive distribution percentages only for positive containers", () => {
     render(
       <FinanceManagementPanel
@@ -240,10 +352,18 @@ describe("FinanceManagementPanel", () => {
 
     expect(wallet).toHaveTextContent("当前总余额");
     expect(wallet).toHaveTextContent("900");
-    expect(wallet).toHaveTextContent("银行卡30030%");
-    expect(wallet).toHaveTextContent("学习基金70070%");
+    expect(wallet).toHaveTextContent("银行卡");
+    expect(wallet).toHaveTextContent("桌面手动快照");
+    expect(wallet).toHaveTextContent("300");
+    expect(wallet).toHaveTextContent("30%");
+    expect(within(wallet).getByRole("button", { name: "编辑银行卡" })).toBeInTheDocument();
+    expect(within(wallet).getByRole("button", { name: "删除银行卡" })).toBeInTheDocument();
+    expect(wallet).toHaveTextContent("学习基金");
+    expect(wallet).toHaveTextContent("700");
+    expect(wallet).toHaveTextContent("70%");
     expect(wallet).toHaveTextContent("信用卡");
     expect(wallet).toHaveTextContent("-100");
+    expect(wallet).toHaveTextContent("暂不计算");
   });
 
   it("shows a zero balance gray state without percentages", () => {
@@ -260,7 +380,7 @@ describe("FinanceManagementPanel", () => {
     const wallet = screen.getByRole("region", { name: "我的钱包" });
 
     expect(wallet).toHaveTextContent("当前总余额");
-    expect(wallet).toHaveTextContent("还没有可分配余额快照");
+    expect(wallet).toHaveTextContent("尚未新建资金容器。");
     expect(wallet).not.toHaveTextContent("%");
   });
 
@@ -299,8 +419,8 @@ describe("FinanceManagementPanel", () => {
 
     expect(future).toHaveTextContent("金鹅账户后续开放");
     expect(future).toHaveTextContent("梦想账户后续开放");
-    expect(future).toHaveTextContent("日常开销池后续开放");
     expect(future).toHaveTextContent("财富流动日志后续开放");
+    expect(future).not.toHaveTextContent("日常开销池");
     expect(future).not.toHaveTextContent("金钱流入来源");
     expect(within(future).queryByRole("button")).not.toBeInTheDocument();
   });
@@ -319,6 +439,7 @@ describe("FinanceManagementPanel", () => {
     expect(screen.queryByText("预算警报")).not.toBeInTheDocument();
     expect(screen.queryByText("超支惩罚")).not.toBeInTheDocument();
     expect(screen.queryByText("财务健康评分")).not.toBeInTheDocument();
+    expect(screen.queryByText("消费建议")).not.toBeInTheDocument();
     expect(screen.queryByText("投资建议")).not.toBeInTheDocument();
     expect(screen.queryByText("财务诊断")).not.toBeInTheDocument();
     expect(screen.queryByText("银行连接")).not.toBeInTheDocument();

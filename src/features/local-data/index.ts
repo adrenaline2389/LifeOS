@@ -1,5 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type {
+  DailyExpenseEntry,
+  DailyExpensePool,
   EcosystemObservation,
   EnergyObservation,
   MoneyInflowSource,
@@ -36,6 +38,10 @@ type StoredWalletContainer = WalletContainer;
 
 type StoredMoneyInflowSource = MoneyInflowSource;
 
+type StoredDailyExpensePool = DailyExpensePool;
+
+type StoredDailyExpenseEntry = DailyExpenseEntry;
+
 export type LifeOSLocalDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
   startupScanProfile: StartupScanProfile | null;
@@ -58,6 +64,8 @@ export class LifeOSLocalDatabase extends Dexie {
   energyObservations!: Table<StoredEnergyObservation, string>;
   walletContainers!: Table<StoredWalletContainer, string>;
   moneyInflowSources!: Table<StoredMoneyInflowSource, string>;
+  dailyExpensePools!: Table<StoredDailyExpensePool, string>;
+  dailyExpenseEntries!: Table<StoredDailyExpenseEntry, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -96,6 +104,16 @@ export class LifeOSLocalDatabase extends Dexie {
       energyObservations: "id, observedAt, dimensionId, updatedAt",
       walletContainers: "id, createdAt, updatedAt",
       moneyInflowSources: "id, createdAt, updatedAt, targetWalletContainerId",
+    });
+    this.version(7).stores({
+      onboardingAnswers: "id, updatedAt",
+      startupScanProfiles: "id, updatedAt",
+      ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
+      energyObservations: "id, observedAt, dimensionId, updatedAt",
+      walletContainers: "id, createdAt, updatedAt",
+      moneyInflowSources: "id, createdAt, updatedAt, targetWalletContainerId",
+      dailyExpensePools: "id, createdAt, updatedAt",
+      dailyExpenseEntries: "id, spentAt, createdAt, updatedAt",
     });
   }
 }
@@ -301,6 +319,75 @@ export const readMoneyInflowSources = async (
   }));
 };
 
+export const saveDailyExpensePool = async (
+  database: LifeOSLocalDatabase,
+  pool: DailyExpensePool,
+): Promise<void> => {
+  await database.dailyExpensePools.put(pool);
+};
+
+export const readDailyExpensePool = async (
+  database: LifeOSLocalDatabase,
+): Promise<DailyExpensePool | null> => {
+  const pool = await database.dailyExpensePools.get("default");
+
+  if (!pool) {
+    return null;
+  }
+
+  return {
+    id: pool.id,
+    balance: pool.balance,
+    ...(pool.selectedWalletContainerId
+      ? { selectedWalletContainerId: pool.selectedWalletContainerId }
+      : {}),
+    ...(typeof pool.lastTransferAmount === "number"
+      ? { lastTransferAmount: pool.lastTransferAmount }
+      : {}),
+    ...(pool.lastTransferAt ? { lastTransferAt: pool.lastTransferAt } : {}),
+    ...(pool.lastTransferWalletContainerId
+      ? { lastTransferWalletContainerId: pool.lastTransferWalletContainerId }
+      : {}),
+    ...(pool.lastTransferWalletContainerNameSnapshot
+      ? {
+          lastTransferWalletContainerNameSnapshot:
+            pool.lastTransferWalletContainerNameSnapshot,
+        }
+      : {}),
+    createdAt: pool.createdAt,
+    updatedAt: pool.updatedAt,
+  };
+};
+
+export const saveDailyExpenseEntry = async (
+  database: LifeOSLocalDatabase,
+  entry: DailyExpenseEntry,
+): Promise<void> => {
+  await database.dailyExpenseEntries.put(entry);
+};
+
+export const deleteDailyExpenseEntry = async (
+  database: LifeOSLocalDatabase,
+  entryId: string,
+): Promise<void> => {
+  await database.dailyExpenseEntries.delete(entryId);
+};
+
+export const readDailyExpenseEntries = async (
+  database: LifeOSLocalDatabase,
+): Promise<DailyExpenseEntry[]> => {
+  const entries = await database.dailyExpenseEntries.orderBy("spentAt").toArray();
+
+  return entries.map((entry) => ({
+    id: entry.id,
+    amount: entry.amount,
+    note: entry.note,
+    spentAt: entry.spentAt,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt,
+  }));
+};
+
 export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
@@ -320,6 +407,8 @@ export const clearLifeOSLocalData = async (
       database.energyObservations,
       database.walletContainers,
       database.moneyInflowSources,
+      database.dailyExpensePools,
+      database.dailyExpenseEntries,
     ],
     async () => {
       await database.onboardingAnswers.clear();
@@ -328,6 +417,8 @@ export const clearLifeOSLocalData = async (
       await database.energyObservations.clear();
       await database.walletContainers.clear();
       await database.moneyInflowSources.clear();
+      await database.dailyExpensePools.clear();
+      await database.dailyExpenseEntries.clear();
     },
   );
 };

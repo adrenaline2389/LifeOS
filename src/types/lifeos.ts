@@ -212,3 +212,29 @@ export type MoneyInflowSource = {
 };
 
 export type MoneyInflowTargetStatus = "available" | "missing";
+
+export type DailyExpensePool = {
+  id: "default";
+  balance: number;
+  selectedWalletContainerId?: string;
+  lastTransferAmount?: number;
+  lastTransferAt?: string;
+  lastTransferWalletContainerId?: string;
+  lastTransferWalletContainerNameSnapshot?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DailyExpenseEntry = {
+  id: string;
+  amount: number;
+  note: string;
+  spentAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DailyExpenseTransferSourceStatus =
+  | "available"
+  | "missing"
+  | "unselected";
