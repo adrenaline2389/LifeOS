@@ -108,6 +108,7 @@
 
 .legendList,
 .incomeSourceList,
+.wealthFlowList,
 .futureList {
   display: grid;
   gap: 0.75rem;
@@ -128,6 +129,7 @@
 }
 
 .incomeSourceCard,
+.wealthFlowCard,
 .emptyContainer,
 .editor,
 .futureList li,
@@ -157,6 +159,94 @@
   display: grid;
   gap: 0.75rem;
   grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.wealthFlowIntro p {
+  line-height: 1.6;
+  margin: 0;
+}
+
+.wealthFlowList {
+  margin-top: 1rem;
+}
+
+.wealthFlowCard {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.wealthFlowEventBody {
+  align-items: flex-start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(7.5rem, 0.8fr) minmax(0, 1fr) auto;
+}
+
+.wealthFlowEventHeader {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.wealthFlowEventHeader p {
+  color: #4a4a44;
+  line-height: 1.6;
+  margin: 0.15rem 0 0;
+}
+
+.wealthFlowAmount {
+  border: 2px solid #111111;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 rgba(17, 17, 17, 0.24);
+  flex: 0 0 auto;
+  font-weight: 700;
+  justify-self: end;
+  line-height: 1.3;
+  max-width: 11rem;
+  overflow-wrap: anywhere;
+  padding: 0.35rem 0.5rem;
+  text-align: right;
+}
+
+.wealthFlowAmountIn {
+  background: #d9efd8;
+  color: #173d22;
+}
+
+.wealthFlowAmountTransfer {
+  background: #f6e08b;
+  color: #4b3810;
+}
+
+.wealthFlowAmountOut {
+  background: #f0c2ba;
+  color: #5a1815;
+}
+
+.wealthFlowMeta {
+  color: #4a4a44;
+  display: grid;
+  gap: 0.25rem;
+  line-height: 1.45;
+  padding-top: 0.1rem;
+}
+
+.wealthFlowMeta span {
+  overflow-wrap: anywhere;
+}
+
+.wealthFlowPagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
+}
+
+.wealthFlowPagination span {
+  color: #4a4a44;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .containerHeader {
@@ -354,6 +444,15 @@
 
   .incomeSourceCard {
     grid-template-columns: 1fr;
+  }
+
+  .wealthFlowEventBody {
+    grid-template-columns: 1fr;
+  }
+
+  .wealthFlowAmount {
+    max-width: 100%;
+    text-align: left;
   }
 
   .legendList li {

@@ -9,8 +9,10 @@ import type {
   DailyExpensePool,
   MoneyInflowSource,
   WalletContainer,
+  WealthFlowEvent,
 } from "@/types/lifeos";
 
+import { applyDailyExpenseEntryDeletion } from "./daily-expense-actions";
 import {
   buildWalletSummary,
   formatMoneyAmount,
@@ -19,7 +21,14 @@ import {
 import { applyMoneyInflowManualDeposit } from "./income-source-actions";
 import { DailyExpensePoolPanel } from "./DailyExpensePoolPanel";
 import { IncomeSourcePanel } from "./IncomeSourcePanel";
+import { WealthFlowLogPanel } from "./WealthFlowLogPanel";
 import styles from "./finance-management.module.css";
+import {
+  createDailyExpenseRefundEvent,
+  createDailyExpenseSpentEvent,
+  createDailyExpenseTransferEvent,
+  createIncomeReceivedEvent,
+} from "./wealth-flow-events";
 
 export type FinanceManagementPanelProps = {
   containers: WalletContainer[];
@@ -30,14 +39,17 @@ export type FinanceManagementPanelProps = {
   onDeleteIncomeSource?: (sourceId: string) => Promise<void> | void;
   dailyExpensePool?: DailyExpensePool | null;
   dailyExpenseEntries?: DailyExpenseEntry[];
+  wealthFlowEvents?: WealthFlowEvent[];
   onSaveDailyExpensePool?: (pool: DailyExpensePool) => Promise<void> | void;
   onSaveDailyExpenseEntry?: (entry: DailyExpenseEntry) => Promise<void> | void;
   onDeleteDailyExpenseEntry?: (entryId: string) => Promise<void> | void;
+  onSaveWealthFlowEvent?: (event: WealthFlowEvent) => Promise<void> | void;
   onBack: () => void;
   now?: () => Date;
   createContainerId?: () => string;
   createIncomeSourceId?: () => string;
   createDailyExpenseEntryId?: () => string;
+  createWealthFlowEventId?: () => string;
 };
 
 type WalletFormState = {
@@ -57,7 +69,7 @@ const CONTAINER_COLORS = [
   { value: "#8f7ac8", label: "紫灰" },
 ];
 
-const FUTURE_STRUCTURES = ["金鹅账户", "梦想账户", "财富流动日志"];
+const FUTURE_STRUCTURES = ["金鹅账户", "梦想账户"];
 
 const EMPTY_FORM: WalletFormState = {
   id: null,
@@ -77,14 +89,17 @@ export function FinanceManagementPanel({
   onDeleteIncomeSource = noopDeleteIncomeSource,
   dailyExpensePool = null,
   dailyExpenseEntries = [],
+  wealthFlowEvents = [],
   onSaveDailyExpensePool = noopSaveDailyExpensePool,
   onSaveDailyExpenseEntry = noopSaveDailyExpenseEntry,
   onDeleteDailyExpenseEntry = noopDeleteDailyExpenseEntry,
+  onSaveWealthFlowEvent = noopSaveWealthFlowEvent,
   onBack,
   now = () => new Date(),
   createContainerId = createDefaultContainerId,
   createIncomeSourceId,
   createDailyExpenseEntryId,
+  createWealthFlowEventId,
 }: FinanceManagementPanelProps) {
   const [savedContainers, setSavedContainers] = useState<WalletContainer[]>([]);
   const [deletedContainerIds, setDeletedContainerIds] = useState<string[]>([]);
@@ -159,6 +174,17 @@ export function FinanceManagementPanel({
     }
 
     await persistWalletContainer(result.updatedContainer);
+    await onSaveWealthFlowEvent(
+      createIncomeReceivedEvent({
+        source,
+        targetWalletContainer: result.updatedContainer,
+        amount: result.depositedAmount,
+        now,
+        ...(createWealthFlowEventId
+          ? { createId: createWealthFlowEventId }
+          : {}),
+      }),
+    );
   }
 
   async function persistWalletContainer(container: WalletContainer) {
@@ -170,6 +196,45 @@ export function FinanceManagementPanel({
       ...current.filter((candidate) => candidate.id !== container.id),
       container,
     ]);
+  }
+
+  async function handleRefundExpenseEvent(event: WealthFlowEvent) {
+    if (
+      event.type !== "daily_expense_spent" ||
+      !event.relatedDailyExpenseEntryId ||
+      !dailyExpensePool
+    ) {
+      return;
+    }
+
+    const entry = dailyExpenseEntries.find(
+      (candidate) => candidate.id === event.relatedDailyExpenseEntryId,
+    );
+
+    if (!entry) {
+      return;
+    }
+
+    const result = applyDailyExpenseEntryDeletion({
+      pool: dailyExpensePool,
+      entry,
+      now,
+    });
+
+    await onSaveDailyExpensePool(result.pool);
+    await onDeleteDailyExpenseEntry(result.deletedEntryId);
+    await onSaveWealthFlowEvent(
+      createDailyExpenseRefundEvent({
+        targetDailyExpensePool: result.pool,
+        amount: entry.amount,
+        relatedEventId: event.id,
+        relatedDailyExpenseEntryId: entry.id,
+        now,
+        ...(createWealthFlowEventId
+          ? { createId: createWealthFlowEventId }
+          : {}),
+      }),
+    );
   }
 
   return (
@@ -304,11 +369,45 @@ export function FinanceManagementPanel({
           entries={dailyExpenseEntries}
           now={now}
           onDeleteEntry={onDeleteDailyExpenseEntry}
+          onExpenseCharged={async ({ entry, pool: updatedPool }) => {
+            await onSaveWealthFlowEvent(
+              createDailyExpenseSpentEvent({
+                sourceDailyExpensePool: updatedPool,
+                dailyExpenseEntry: entry,
+                now,
+                ...(createWealthFlowEventId
+                  ? { createId: createWealthFlowEventId }
+                  : {}),
+              }),
+            );
+          }}
           onSaveEntry={onSaveDailyExpenseEntry}
           onSavePool={onSaveDailyExpensePool}
           onSaveWalletContainer={persistWalletContainer}
+          onTransferCompleted={async ({
+            pool: updatedPool,
+            sourceContainer,
+            amount,
+          }) => {
+            await onSaveWealthFlowEvent(
+              createDailyExpenseTransferEvent({
+                sourceWalletContainer: sourceContainer,
+                targetDailyExpensePool: updatedPool,
+                amount,
+                now,
+                ...(createWealthFlowEventId
+                  ? { createId: createWealthFlowEventId }
+                  : {}),
+              }),
+            );
+          }}
           pool={dailyExpensePool}
           walletContainers={localContainers}
+        />
+
+        <WealthFlowLogPanel
+          events={wealthFlowEvents}
+          onRefundExpense={handleRefundExpenseEvent}
         />
 
         <Panel title="财务系统未来结构">
@@ -459,6 +558,8 @@ function noopSaveDailyExpensePool() {}
 function noopSaveDailyExpenseEntry() {}
 
 function noopDeleteDailyExpenseEntry() {}
+
+function noopSaveWealthFlowEvent() {}
 
 function formatPercentage(value: number): string {
   return `${new Intl.NumberFormat("zh-CN", {

@@ -8,8 +8,10 @@ import type {
   OnboardingAnswerRecord,
   StartupScanProfile,
   WalletContainer,
+  WealthFlowEvent,
 } from "@/types/lifeos";
 import {
+  clearWealthFlowEvents,
   clearLifeOSLocalData,
   createLifeOSLocalDatabase,
   deleteEcosystemObservation,
@@ -26,6 +28,7 @@ import {
   readOnboardingAnswerRecord,
   readStartupScanProfile,
   readWalletContainers,
+  readWealthFlowEvents,
   saveEcosystemObservation,
   saveEnergyObservation,
   saveDailyExpenseEntry,
@@ -34,6 +37,7 @@ import {
   saveOnboardingAnswerRecord,
   saveStartupScanProfile,
   saveWalletContainer,
+  saveWealthFlowEvent,
 } from "./index";
 
 const testDatabases: Array<ReturnType<typeof createLifeOSLocalDatabase>> = [];
@@ -182,6 +186,26 @@ const dailyExpenseEntry = (
   ...overrides,
 });
 
+const wealthFlowEvent = (
+  overrides: Partial<WealthFlowEvent> = {},
+): WealthFlowEvent => ({
+  id: "wealth-flow-event-1",
+  type: "daily_expense_spent",
+  direction: "out",
+  amount: 68,
+  occurredAt: "2026-06-02T09:30:00.000Z",
+  source: {
+    type: "daily_expense_pool",
+    id: "default",
+    nameSnapshot: "日常开销池",
+  },
+  relatedDailyExpenseEntryId: "daily-expense-entry-1",
+  note: "早餐和交通",
+  createdAt: "2026-06-02T09:30:00.000Z",
+  updatedAt: "2026-06-02T09:30:00.000Z",
+  ...overrides,
+});
+
 describe("LifeOS local data storage", () => {
   it("returns an empty local data snapshot before anything is saved", async () => {
     const database = createTestDatabase();
@@ -224,6 +248,7 @@ describe("LifeOS local data storage", () => {
     await saveMoneyInflowSource(database, moneyInflowSource());
     await saveDailyExpensePool(database, dailyExpensePool());
     await saveDailyExpenseEntry(database, dailyExpenseEntry());
+    await saveWealthFlowEvent(database, wealthFlowEvent());
 
     await clearLifeOSLocalData(database);
 
@@ -237,6 +262,7 @@ describe("LifeOS local data storage", () => {
     await expect(readMoneyInflowSources(database)).resolves.toEqual([]);
     await expect(readDailyExpensePool(database)).resolves.toBeNull();
     await expect(readDailyExpenseEntries(database)).resolves.toEqual([]);
+    await expect(readWealthFlowEvents(database)).resolves.toEqual([]);
   });
 
   it("saves ecosystem observations with semantic snapshots", async () => {
@@ -759,5 +785,95 @@ describe("LifeOS local data storage", () => {
     await deleteDailyExpenseEntry(database, "expense-entry-to-delete");
 
     await expect(readDailyExpenseEntries(database)).resolves.toEqual([keptEntry]);
+  });
+
+  it("returns an empty wealth flow log before anything is saved", async () => {
+    const database = createTestDatabase();
+
+    await expect(readWealthFlowEvents(database)).resolves.toEqual([]);
+  });
+
+  it("saves and reads wealth flow events with snapshots", async () => {
+    const database = createTestDatabase();
+    const event = wealthFlowEvent({
+      target: {
+        type: "wallet_container",
+        id: "wallet-container-1",
+        nameSnapshot: "日常账户",
+      },
+    });
+
+    await saveWealthFlowEvent(database, event);
+
+    await expect(readWealthFlowEvents(database)).resolves.toEqual([event]);
+  });
+
+  it("reads wealth flow events by occurred time in descending order", async () => {
+    const database = createTestDatabase();
+    const latestEvent = wealthFlowEvent({
+      id: "latest-event",
+      occurredAt: "2026-06-03T10:00:00.000Z",
+      createdAt: "2026-06-03T10:00:00.000Z",
+      updatedAt: "2026-06-03T10:00:00.000Z",
+    });
+    const earliestEvent = wealthFlowEvent({
+      id: "earliest-event",
+      occurredAt: "2026-06-01T10:00:00.000Z",
+      createdAt: "2026-06-01T10:00:00.000Z",
+      updatedAt: "2026-06-01T10:00:00.000Z",
+    });
+    const middleEvent = wealthFlowEvent({
+      id: "middle-event",
+      occurredAt: "2026-06-02T10:00:00.000Z",
+      createdAt: "2026-06-02T10:00:00.000Z",
+      updatedAt: "2026-06-02T10:00:00.000Z",
+    });
+
+    await saveWealthFlowEvent(database, middleEvent);
+    await saveWealthFlowEvent(database, earliestEvent);
+    await saveWealthFlowEvent(database, latestEvent);
+
+    await expect(readWealthFlowEvents(database)).resolves.toEqual([
+      latestEvent,
+      middleEvent,
+      earliestEvent,
+    ]);
+  });
+
+  it("uses created time as a stable wealth flow event tie breaker", async () => {
+    const database = createTestDatabase();
+    const firstCreatedEvent = wealthFlowEvent({
+      id: "first-created-event",
+      occurredAt: "2026-06-02T10:00:00.000Z",
+      createdAt: "2026-06-02T10:00:00.000Z",
+      updatedAt: "2026-06-02T10:00:00.000Z",
+    });
+    const secondCreatedEvent = wealthFlowEvent({
+      id: "second-created-event",
+      occurredAt: "2026-06-02T10:00:00.000Z",
+      createdAt: "2026-06-02T10:00:01.000Z",
+      updatedAt: "2026-06-02T10:00:01.000Z",
+    });
+
+    await saveWealthFlowEvent(database, firstCreatedEvent);
+    await saveWealthFlowEvent(database, secondCreatedEvent);
+
+    await expect(readWealthFlowEvents(database)).resolves.toEqual([
+      secondCreatedEvent,
+      firstCreatedEvent,
+    ]);
+  });
+
+  it("clears wealth flow events without clearing other local data", async () => {
+    const database = createTestDatabase();
+    await saveWalletContainer(database, walletContainer());
+    await saveWealthFlowEvent(database, wealthFlowEvent());
+
+    await clearWealthFlowEvents(database);
+
+    await expect(readWealthFlowEvents(database)).resolves.toEqual([]);
+    await expect(readWalletContainers(database)).resolves.toEqual([
+      walletContainer(),
+    ]);
   });
 });

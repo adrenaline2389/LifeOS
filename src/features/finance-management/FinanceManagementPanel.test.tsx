@@ -7,6 +7,7 @@ import type {
   DailyExpensePool,
   MoneyInflowSource,
   WalletContainer,
+  WealthFlowEvent,
 } from "@/types/lifeos";
 
 import { FinanceManagementPanel } from "./FinanceManagementPanel";
@@ -66,6 +67,26 @@ const dailyExpenseEntry = (
   ...overrides,
 });
 
+const wealthFlowEvent = (
+  overrides: Partial<WealthFlowEvent> = {},
+): WealthFlowEvent => ({
+  id: "wealth-flow-1",
+  type: "daily_expense_spent",
+  direction: "out",
+  amount: 68,
+  occurredAt: "2026-05-27T08:30:00.000",
+  source: {
+    type: "daily_expense_pool",
+    id: "default",
+    nameSnapshot: "日常开销池",
+  },
+  relatedDailyExpenseEntryId: "expense-1",
+  note: "早餐和交通",
+  createdAt: "2026-05-27T08:30:00.000",
+  updatedAt: "2026-05-27T08:30:00.000",
+  ...overrides,
+});
+
 describe("FinanceManagementPanel", () => {
   it("renders the finance management page and wallet snapshot", () => {
     render(
@@ -97,6 +118,10 @@ describe("FinanceManagementPanel", () => {
     expect(dailyExpense).not.toHaveTextContent(
       "这是你手动划入、手动结算的本地日常开销池。",
     );
+    const wealthFlow = screen.getByRole("region", { name: "财富流动日志" });
+    expect(wealthFlow).toHaveTextContent(
+      "这里展示从当前版本开始追加记录的本地财富流动事件。",
+    );
 
     expect(
       wallet.compareDocumentPosition(incomeSources) &
@@ -104,6 +129,10 @@ describe("FinanceManagementPanel", () => {
     ).toBeTruthy();
     expect(
       incomeSources.compareDocumentPosition(dailyExpense) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      dailyExpense.compareDocumentPosition(wealthFlow) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
@@ -205,6 +234,7 @@ describe("FinanceManagementPanel", () => {
   it("deposits a fixed amount income source into its target wallet", async () => {
     const user = userEvent.setup();
     const onSaveContainer = vi.fn().mockResolvedValue(undefined);
+    const onSaveWealthFlowEvent = vi.fn().mockResolvedValue(undefined);
 
     render(
       <FinanceManagementPanel
@@ -215,6 +245,8 @@ describe("FinanceManagementPanel", () => {
         onDeleteIncomeSource={vi.fn()}
         onSaveContainer={onSaveContainer}
         onSaveIncomeSource={vi.fn()}
+        onSaveWealthFlowEvent={onSaveWealthFlowEvent}
+        createWealthFlowEventId={() => "wealth-income"}
         now={now}
       />,
     );
@@ -227,11 +259,31 @@ describe("FinanceManagementPanel", () => {
       updatedAt: "2026-05-27T09:10:00.000",
     });
     expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("200");
+    expect(onSaveWealthFlowEvent).toHaveBeenCalledWith({
+      id: "wealth-income",
+      type: "income_received",
+      direction: "in",
+      amount: 80,
+      occurredAt: "2026-05-27T09:10:00.000",
+      source: {
+        type: "income_source",
+        id: "income-1",
+        nameSnapshot: "固定工资",
+      },
+      target: {
+        type: "wallet_container",
+        id: "wallet-1",
+        nameSnapshot: "现金口袋",
+      },
+      createdAt: "2026-05-27T09:10:00.000",
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
   });
 
   it("asks for a received amount before depositing a variable amount income source", async () => {
     const user = userEvent.setup();
     const onSaveContainer = vi.fn().mockResolvedValue(undefined);
+    const onSaveWealthFlowEvent = vi.fn().mockResolvedValue(undefined);
 
     render(
       <FinanceManagementPanel
@@ -248,6 +300,8 @@ describe("FinanceManagementPanel", () => {
         onDeleteIncomeSource={vi.fn()}
         onSaveContainer={onSaveContainer}
         onSaveIncomeSource={vi.fn()}
+        onSaveWealthFlowEvent={onSaveWealthFlowEvent}
+        createWealthFlowEventId={() => "wealth-variable-income"}
         now={now}
       />,
     );
@@ -262,12 +316,21 @@ describe("FinanceManagementPanel", () => {
       updatedAt: "2026-05-27T09:10:00.000",
     });
     expect(screen.getByRole("region", { name: "我的钱包" })).toHaveTextContent("195.5");
+    expect(onSaveWealthFlowEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "wealth-variable-income",
+        type: "income_received",
+        direction: "in",
+        amount: 75.5,
+      }),
+    );
   });
 
   it("transfers money into the daily expense pool and refreshes wallet summary", async () => {
     const user = userEvent.setup();
     const onSaveContainer = vi.fn().mockResolvedValue(undefined);
     const onSaveDailyExpensePool = vi.fn().mockResolvedValue(undefined);
+    const onSaveWealthFlowEvent = vi.fn().mockResolvedValue(undefined);
 
     render(
       <FinanceManagementPanel
@@ -282,6 +345,8 @@ describe("FinanceManagementPanel", () => {
         onSaveDailyExpenseEntry={vi.fn()}
         onSaveDailyExpensePool={onSaveDailyExpensePool}
         onSaveIncomeSource={vi.fn()}
+        onSaveWealthFlowEvent={onSaveWealthFlowEvent}
+        createWealthFlowEventId={() => "wealth-transfer"}
         now={now}
       />,
     );
@@ -308,14 +373,34 @@ describe("FinanceManagementPanel", () => {
     expect(screen.getByRole("region", { name: "日常开销池" })).toHaveTextContent(
       "550",
     );
+    expect(onSaveWealthFlowEvent).toHaveBeenCalledWith({
+      id: "wealth-transfer",
+      type: "daily_expense_transfer",
+      direction: "transfer",
+      amount: 250,
+      occurredAt: "2026-05-27T09:10:00.000",
+      source: {
+        type: "wallet_container",
+        id: "wallet-1",
+        nameSnapshot: "现金口袋",
+      },
+      target: {
+        type: "daily_expense_pool",
+        id: "default",
+        nameSnapshot: "日常开销池",
+      },
+      createdAt: "2026-05-27T09:10:00.000",
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
   });
 
-  it("shows daily expense entries without treating them as future placeholders", () => {
+  it("shows v1.4.3 expense events in wealth flow log instead of the daily expense pool", () => {
     render(
       <FinanceManagementPanel
         containers={[walletContainer()]}
         dailyExpenseEntries={[dailyExpenseEntry()]}
         dailyExpensePool={dailyExpensePool()}
+        wealthFlowEvents={[wealthFlowEvent()]}
         onBack={vi.fn()}
         onDeleteContainer={vi.fn()}
         onDeleteDailyExpenseEntry={vi.fn()}
@@ -329,8 +414,125 @@ describe("FinanceManagementPanel", () => {
     );
 
     const dailyExpense = screen.getByRole("region", { name: "日常开销池" });
-    expect(dailyExpense).toHaveTextContent("早餐和交通");
+    const wealthFlow = screen.getByRole("region", { name: "财富流动日志" });
+    expect(dailyExpense).not.toHaveTextContent("早餐和交通");
+    expect(wealthFlow).toHaveTextContent("早餐和交通");
     expect(dailyExpense).not.toHaveTextContent("后续开放");
+  });
+
+  it("charges the daily expense pool and records a wealth flow expense event", async () => {
+    const user = userEvent.setup();
+    const onSaveDailyExpensePool = vi.fn().mockResolvedValue(undefined);
+    const onSaveDailyExpenseEntry = vi.fn().mockResolvedValue(undefined);
+    const onSaveWealthFlowEvent = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <FinanceManagementPanel
+        containers={[walletContainer({ balance: 1000 })]}
+        dailyExpenseEntries={[]}
+        dailyExpensePool={dailyExpensePool({ balance: 300 })}
+        onBack={vi.fn()}
+        onDeleteContainer={vi.fn()}
+        onDeleteDailyExpenseEntry={vi.fn()}
+        onDeleteIncomeSource={vi.fn()}
+        onSaveContainer={vi.fn()}
+        onSaveDailyExpenseEntry={onSaveDailyExpenseEntry}
+        onSaveDailyExpensePool={onSaveDailyExpensePool}
+        onSaveIncomeSource={vi.fn()}
+        onSaveWealthFlowEvent={onSaveWealthFlowEvent}
+        createDailyExpenseEntryId={() => "expense-new"}
+        createWealthFlowEventId={() => "wealth-spent"}
+        now={now}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("消费金额"), "68");
+    await user.type(screen.getByLabelText("消费备注"), " 早餐和交通 ");
+    await user.click(screen.getByRole("button", { name: "立即扣款" }));
+
+    expect(onSaveDailyExpensePool).toHaveBeenCalledWith({
+      ...dailyExpensePool({ balance: 300 }),
+      balance: 232,
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(onSaveDailyExpenseEntry).toHaveBeenCalledWith({
+      id: "expense-new",
+      amount: 68,
+      note: "早餐和交通",
+      spentAt: "2026-05-27T09:10:00.000",
+      createdAt: "2026-05-27T09:10:00.000",
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(onSaveWealthFlowEvent).toHaveBeenCalledWith({
+      id: "wealth-spent",
+      type: "daily_expense_spent",
+      direction: "out",
+      amount: 68,
+      occurredAt: "2026-05-27T09:10:00.000",
+      source: {
+        type: "daily_expense_pool",
+        id: "default",
+        nameSnapshot: "日常开销池",
+      },
+      relatedDailyExpenseEntryId: "expense-new",
+      note: "早餐和交通",
+      createdAt: "2026-05-27T09:10:00.000",
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+  });
+
+  it("refunds an expense from the wealth flow log without touching wallets", async () => {
+    const user = userEvent.setup();
+    const onSaveDailyExpensePool = vi.fn().mockResolvedValue(undefined);
+    const onDeleteDailyExpenseEntry = vi.fn().mockResolvedValue(undefined);
+    const onSaveWealthFlowEvent = vi.fn().mockResolvedValue(undefined);
+    const onSaveContainer = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <FinanceManagementPanel
+        containers={[walletContainer({ balance: 1000 })]}
+        dailyExpenseEntries={[dailyExpenseEntry({ id: "expense-1", amount: 68 })]}
+        dailyExpensePool={dailyExpensePool({ balance: 232 })}
+        wealthFlowEvents={[wealthFlowEvent({ id: "wealth-spent" })]}
+        onBack={vi.fn()}
+        onDeleteContainer={vi.fn()}
+        onDeleteDailyExpenseEntry={onDeleteDailyExpenseEntry}
+        onDeleteIncomeSource={vi.fn()}
+        onSaveContainer={onSaveContainer}
+        onSaveDailyExpenseEntry={vi.fn()}
+        onSaveDailyExpensePool={onSaveDailyExpensePool}
+        onSaveIncomeSource={vi.fn()}
+        onSaveWealthFlowEvent={onSaveWealthFlowEvent}
+        createWealthFlowEventId={() => "wealth-refund"}
+        now={now}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "回退消费早餐和交通" }));
+
+    expect(onSaveDailyExpensePool).toHaveBeenCalledWith({
+      ...dailyExpensePool({ balance: 232 }),
+      balance: 300,
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
+    expect(onDeleteDailyExpenseEntry).toHaveBeenCalledWith("expense-1");
+    expect(onSaveContainer).not.toHaveBeenCalled();
+    expect(onSaveWealthFlowEvent).toHaveBeenCalledWith({
+      id: "wealth-refund",
+      type: "daily_expense_refund",
+      direction: "in",
+      amount: 68,
+      occurredAt: "2026-05-27T09:10:00.000",
+      target: {
+        type: "daily_expense_pool",
+        id: "default",
+        nameSnapshot: "日常开销池",
+      },
+      relatedEventId: "wealth-spent",
+      relatedDailyExpenseEntryId: "expense-1",
+      createdAt: "2026-05-27T09:10:00.000",
+      updatedAt: "2026-05-27T09:10:00.000",
+    });
   });
 
   it("shows positive distribution percentages only for positive containers", () => {
@@ -416,12 +618,17 @@ describe("FinanceManagementPanel", () => {
     );
 
     const future = screen.getByRole("region", { name: "财务系统未来结构" });
+    const wealthFlow = screen.getByRole("region", { name: "财富流动日志" });
 
     expect(future).toHaveTextContent("金鹅账户后续开放");
     expect(future).toHaveTextContent("梦想账户后续开放");
-    expect(future).toHaveTextContent("财富流动日志后续开放");
+    expect(future).not.toHaveTextContent("财富流动日志后续开放");
     expect(future).not.toHaveTextContent("日常开销池");
     expect(future).not.toHaveTextContent("金钱流入来源");
+    expect(
+      wealthFlow.compareDocumentPosition(future) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(future).queryByRole("button")).not.toBeInTheDocument();
   });
 

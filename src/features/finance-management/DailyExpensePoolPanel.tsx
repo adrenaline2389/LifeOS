@@ -12,7 +12,6 @@ import type {
 
 import {
   applyDailyExpenseCharge,
-  applyDailyExpenseEntryDeletion,
   applyDailyExpenseTransfer,
   getDailyExpenseTransferSourceStatus,
 } from "./daily-expense-actions";
@@ -27,18 +26,27 @@ export type DailyExpensePoolPanelProps = {
   onSaveEntry: (entry: DailyExpenseEntry) => Promise<void> | void;
   onDeleteEntry: (entryId: string) => Promise<void> | void;
   onSaveWalletContainer: (container: WalletContainer) => Promise<void> | void;
+  onTransferCompleted?: (result: {
+    amount: number;
+    pool: DailyExpensePool;
+    sourceContainer: WalletContainer;
+  }) => Promise<void> | void;
+  onExpenseCharged?: (result: {
+    entry: DailyExpenseEntry;
+    pool: DailyExpensePool;
+  }) => Promise<void> | void;
   now?: () => Date;
   createEntryId?: () => string;
 };
 
 export function DailyExpensePoolPanel({
   pool,
-  entries,
   walletContainers,
   onSavePool,
   onSaveEntry,
-  onDeleteEntry,
   onSaveWalletContainer,
+  onTransferCompleted = noopTransferCompleted,
+  onExpenseCharged = noopExpenseCharged,
   now = () => new Date(),
   createEntryId = createDefaultEntryId,
 }: DailyExpensePoolPanelProps) {
@@ -46,8 +54,13 @@ export function DailyExpensePoolPanel({
     () => pool ?? createEmptyPool(walletContainers[0]?.id, now()),
     [pool, walletContainers, now],
   );
-  const [localPool, setLocalPool] = useState<DailyExpensePool>(initialPool);
-  const [localEntries, setLocalEntries] = useState<DailyExpenseEntry[]>(entries);
+  const poolSyncKey = buildPoolSyncKey(initialPool);
+  const [localPoolState, setLocalPoolState] = useState(() => ({
+    pool: initialPool,
+    syncKey: poolSyncKey,
+  }));
+  const localPool =
+    localPoolState.syncKey === poolSyncKey ? localPoolState.pool : initialPool;
   const [transferAmount, setTransferAmount] = useState("");
   const [chargeAmount, setChargeAmount] = useState("");
   const [chargeNote, setChargeNote] = useState("");
@@ -81,7 +94,7 @@ export function DailyExpensePoolPanel({
     };
 
     await onSavePool(updatedPool);
-    setLocalPool(updatedPool);
+    setLocalPoolState({ pool: updatedPool, syncKey: poolSyncKey });
   }
 
   async function handleTransfer(event: FormEvent<HTMLFormElement>) {
@@ -100,7 +113,12 @@ export function DailyExpensePoolPanel({
 
     await onSaveWalletContainer(result.updatedSourceContainer);
     await onSavePool(result.pool);
-    setLocalPool(result.pool);
+    await onTransferCompleted({
+      amount: result.transferredAmount,
+      pool: result.pool,
+      sourceContainer: result.updatedSourceContainer,
+    });
+    setLocalPoolState({ pool: result.pool, syncKey: poolSyncKey });
     setTransferAmount("");
   }
 
@@ -121,25 +139,13 @@ export function DailyExpensePoolPanel({
 
     await onSavePool(result.pool);
     await onSaveEntry(result.entry);
-    setLocalPool(result.pool);
-    setLocalEntries((current) => [...current, result.entry]);
+    await onExpenseCharged({
+      entry: result.entry,
+      pool: result.pool,
+    });
+    setLocalPoolState({ pool: result.pool, syncKey: poolSyncKey });
     setChargeAmount("");
     setChargeNote("");
-  }
-
-  async function handleDeleteEntry(entry: DailyExpenseEntry) {
-    const result = applyDailyExpenseEntryDeletion({
-      pool: localPool,
-      entry,
-      now,
-    });
-
-    await onSavePool(result.pool);
-    await onDeleteEntry(result.deletedEntryId);
-    setLocalPool(result.pool);
-    setLocalEntries((current) =>
-      current.filter((candidate) => candidate.id !== result.deletedEntryId),
-    );
   }
 
   return (
@@ -239,38 +245,6 @@ export function DailyExpensePoolPanel({
           </form>
         </section>
 
-        <section aria-label="消费流水" className={styles.dailyExpenseSection}>
-          <div className={styles.editorHeader}>
-            <strong>消费流水</strong>
-          </div>
-          <ul className={styles.dailyExpenseEntryList}>
-            {localEntries.length > 0 ? (
-              localEntries.map((entry) => (
-                <li className={styles.incomeSourceCard} key={entry.id}>
-                  <div className={styles.incomeSourceHeader}>
-                    <div>
-                      <strong>-{formatMoneyAmount(entry.amount)}</strong>
-                      <p>{entry.note}</p>
-                      <p>{formatDateTime(entry.spentAt)}</p>
-                    </div>
-                  </div>
-                  <div className={styles.containerActions}>
-                    <Button
-                      aria-label={`删除消费流水${entry.note}`}
-                      onClick={() => handleDeleteEntry(entry)}
-                      size="sm"
-                      variant="danger"
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </li>
-              ))
-            ) : (
-              <li className={styles.emptyContainer}>还没有消费流水。</li>
-            )}
-          </ul>
-        </section>
       </div>
     </Panel>
   );
@@ -291,6 +265,19 @@ function createEmptyPool(
   };
 }
 
+function buildPoolSyncKey(pool: DailyExpensePool): string {
+  return [
+    pool.id,
+    pool.balance,
+    pool.selectedWalletContainerId ?? "",
+    pool.lastTransferAmount ?? "",
+    pool.lastTransferAt ?? "",
+    pool.lastTransferWalletContainerId ?? "",
+    pool.lastTransferWalletContainerNameSnapshot ?? "",
+    pool.updatedAt,
+  ].join("|");
+}
+
 function createDefaultEntryId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -298,6 +285,10 @@ function createDefaultEntryId(): string {
 
   return `daily-expense-entry-${Date.now()}`;
 }
+
+function noopTransferCompleted() {}
+
+function noopExpenseCharged() {}
 
 function formatOptionalMoney(value: number | undefined): string {
   return typeof value === "number" ? formatMoneyAmount(value) : "暂无";

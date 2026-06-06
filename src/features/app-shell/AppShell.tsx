@@ -17,6 +17,7 @@ import {
   readLifeOSLocalData,
   readMoneyInflowSources,
   readWalletContainers,
+  readWealthFlowEvents,
   saveDailyExpenseEntry,
   saveDailyExpensePool,
   saveMoneyInflowSource,
@@ -25,6 +26,7 @@ import {
   saveEnergyObservation,
   saveStartupScanProfile,
   saveWalletContainer,
+  saveWealthFlowEvent,
 } from "@/features/local-data";
 import { EnergyManagementPanel } from "@/features/energy-management";
 import { FinanceManagementPanel } from "@/features/finance-management";
@@ -43,6 +45,7 @@ import type {
   SubsystemId,
   StartupScanProfile,
   WalletContainer,
+  WealthFlowEvent,
 } from "@/types/lifeos";
 
 import styles from "./app-shell.module.css";
@@ -60,6 +63,7 @@ export type AppShellDataAdapter = {
   readMoneyInflowSources: () => Promise<MoneyInflowSource[]>;
   readDailyExpensePool: () => Promise<DailyExpensePool | null>;
   readDailyExpenseEntries: () => Promise<DailyExpenseEntry[]>;
+  readWealthFlowEvents: () => Promise<WealthFlowEvent[]>;
   deleteEcosystemObservation: (observationId: string) => Promise<void>;
   deleteEnergyObservation: (observationId: string) => Promise<void>;
   deleteWalletContainer: (containerId: string) => Promise<void>;
@@ -72,6 +76,7 @@ export type AppShellDataAdapter = {
   saveMoneyInflowSource: (source: MoneyInflowSource) => Promise<void>;
   saveDailyExpensePool: (pool: DailyExpensePool) => Promise<void>;
   saveDailyExpenseEntry: (entry: DailyExpenseEntry) => Promise<void>;
+  saveWealthFlowEvent: (event: WealthFlowEvent) => Promise<void>;
   saveStartupScanProfile: (profile: StartupScanProfile) => Promise<void>;
   clear: () => Promise<void>;
 };
@@ -99,6 +104,7 @@ const defaultDataAdapter: AppShellDataAdapter = {
   readMoneyInflowSources: () => readMoneyInflowSources(lifeOSLocalDatabase),
   readDailyExpensePool: () => readDailyExpensePool(lifeOSLocalDatabase),
   readDailyExpenseEntries: () => readDailyExpenseEntries(lifeOSLocalDatabase),
+  readWealthFlowEvents: () => readWealthFlowEvents(lifeOSLocalDatabase),
   deleteEcosystemObservation: (observationId) =>
     deleteEcosystemObservation(lifeOSLocalDatabase, observationId),
   deleteEnergyObservation: (observationId) =>
@@ -123,6 +129,8 @@ const defaultDataAdapter: AppShellDataAdapter = {
     saveDailyExpensePool(lifeOSLocalDatabase, pool),
   saveDailyExpenseEntry: (entry) =>
     saveDailyExpenseEntry(lifeOSLocalDatabase, entry),
+  saveWealthFlowEvent: (event) =>
+    saveWealthFlowEvent(lifeOSLocalDatabase, event),
   saveStartupScanProfile: (profile) =>
     saveStartupScanProfile(lifeOSLocalDatabase, profile),
   clear: () => clearLifeOSLocalData(lifeOSLocalDatabase),
@@ -151,6 +159,7 @@ export function AppShell({
   const [dailyExpenseEntries, setDailyExpenseEntries] = useState<
     DailyExpenseEntry[]
   >([]);
+  const [wealthFlowEvents, setWealthFlowEvents] = useState<WealthFlowEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -202,6 +211,7 @@ export function AppShell({
     setMoneyInflowSources([]);
     setDailyExpensePool(null);
     setDailyExpenseEntries([]);
+    setWealthFlowEvents([]);
     setMode("startup");
   }
 
@@ -221,16 +231,18 @@ export function AppShell({
     }
 
     if (subsystemId === "finance") {
-      const [containers, sources, pool, entries] = await Promise.all([
+      const [containers, sources, pool, entries, flowEvents] = await Promise.all([
         dataAdapter.readWalletContainers(),
         dataAdapter.readMoneyInflowSources(),
         dataAdapter.readDailyExpensePool(),
         dataAdapter.readDailyExpenseEntries(),
+        dataAdapter.readWealthFlowEvents(),
       ]);
       setWalletContainers(containers);
       setMoneyInflowSources(sources);
       setDailyExpensePool(pool);
       setDailyExpenseEntries(entries);
+      setWealthFlowEvents(flowEvents);
       setMode("finance-management");
     }
   }
@@ -289,6 +301,25 @@ export function AppShell({
       current.filter((entry) => entry.id !== entryId),
     );
     await dataAdapter.deleteDailyExpenseEntry(entryId);
+  }
+
+  async function handleSaveWealthFlowEvent(event: WealthFlowEvent) {
+    setWealthFlowEvents((current) =>
+      [event, ...current.filter((item) => item.id !== event.id)].sort(
+        (left, right) => {
+          const occurredComparison = right.occurredAt.localeCompare(
+            left.occurredAt,
+          );
+
+          if (occurredComparison !== 0) {
+            return occurredComparison;
+          }
+
+          return right.createdAt.localeCompare(left.createdAt);
+        },
+      ),
+    );
+    await dataAdapter.saveWealthFlowEvent(event);
   }
 
   return (
@@ -353,6 +384,7 @@ export function AppShell({
             dailyExpenseEntries={dailyExpenseEntries}
             dailyExpensePool={dailyExpensePool}
             incomeSources={moneyInflowSources}
+            wealthFlowEvents={wealthFlowEvents}
             onBack={() => setMode("dashboard")}
             onDeleteContainer={handleDeleteWalletContainer}
             onDeleteIncomeSource={handleDeleteMoneyInflowSource}
@@ -361,6 +393,7 @@ export function AppShell({
             onSaveDailyExpenseEntry={handleSaveDailyExpenseEntry}
             onSaveDailyExpensePool={handleSaveDailyExpensePool}
             onSaveIncomeSource={handleSaveMoneyInflowSource}
+            onSaveWealthFlowEvent={handleSaveWealthFlowEvent}
           />
         ) : null}
       </div>

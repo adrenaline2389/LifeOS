@@ -238,3 +238,40 @@ export type DailyExpenseTransferSourceStatus =
   | "available"
   | "missing"
   | "unselected";
+
+export type WealthFlowEventType =
+  | "income_received"
+  | "daily_expense_transfer"
+  | "daily_expense_spent"
+  | "daily_expense_refund";
+
+export type WealthFlowDirection = "in" | "out" | "transfer";
+
+export type WealthFlowSubjectType =
+  | "wallet_container"
+  | "income_source"
+  | "daily_expense_pool"
+  | "daily_expense_entry"
+  | "dream_account"
+  | "golden_goose_account";
+
+export type WealthFlowSubjectSnapshot = {
+  type: WealthFlowSubjectType;
+  id?: string;
+  nameSnapshot: string;
+};
+
+export type WealthFlowEvent = {
+  id: string;
+  type: WealthFlowEventType;
+  direction: WealthFlowDirection;
+  amount: number;
+  occurredAt: string;
+  source?: WealthFlowSubjectSnapshot;
+  target?: WealthFlowSubjectSnapshot;
+  relatedEventId?: string;
+  relatedDailyExpenseEntryId?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};

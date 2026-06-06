@@ -11,6 +11,7 @@ import type {
   OnboardingAnswerRecord,
   StartupScanProfile,
   WalletContainer,
+  WealthFlowEvent,
 } from "@/types/lifeos";
 
 import { AppShell, type AppShellDataAdapter } from "./AppShell";
@@ -103,6 +104,7 @@ function createAdapter(
   incomeSources: MoneyInflowSource[] = [],
   dailyExpensePool: DailyExpensePool | null = null,
   dailyExpenseEntries: DailyExpenseEntry[] = [],
+  wealthFlowEvents: WealthFlowEvent[] = [],
 ): AppShellDataAdapter {
   return {
     read: vi.fn().mockResolvedValue(snapshot),
@@ -112,6 +114,7 @@ function createAdapter(
     readMoneyInflowSources: vi.fn().mockResolvedValue(incomeSources),
     readDailyExpensePool: vi.fn().mockResolvedValue(dailyExpensePool),
     readDailyExpenseEntries: vi.fn().mockResolvedValue(dailyExpenseEntries),
+    readWealthFlowEvents: vi.fn().mockResolvedValue(wealthFlowEvents),
     deleteEcosystemObservation: vi.fn().mockResolvedValue(undefined),
     deleteEnergyObservation: vi.fn().mockResolvedValue(undefined),
     deleteWalletContainer: vi.fn().mockResolvedValue(undefined),
@@ -124,6 +127,7 @@ function createAdapter(
     saveMoneyInflowSource: vi.fn().mockResolvedValue(undefined),
     saveDailyExpensePool: vi.fn().mockResolvedValue(undefined),
     saveDailyExpenseEntry: vi.fn().mockResolvedValue(undefined),
+    saveWealthFlowEvent: vi.fn().mockResolvedValue(undefined),
     saveStartupScanProfile: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
@@ -309,6 +313,24 @@ describe("AppShell", () => {
           updatedAt: "2026-05-27T08:30:00.000",
         },
       ],
+      [
+        {
+          id: "wealth-flow-breakfast",
+          type: "daily_expense_spent",
+          direction: "out",
+          amount: 18,
+          occurredAt: "2026-05-27T08:30:00.000",
+          source: {
+            type: "daily_expense_pool",
+            id: "default",
+            nameSnapshot: "日常开销池",
+          },
+          relatedDailyExpenseEntryId: "expense-breakfast",
+          note: "早餐",
+          createdAt: "2026-05-27T08:30:00.000",
+          updatedAt: "2026-05-27T08:30:00.000",
+        },
+      ],
     );
 
     render(<AppShell dataAdapter={adapter} />);
@@ -320,11 +342,14 @@ describe("AppShell", () => {
     expect(await screen.findByText("我的钱包")).toBeInTheDocument();
     expect(screen.getAllByText("银行卡").length).toBeGreaterThan(0);
     expect(screen.getByText("固定工资")).toBeInTheDocument();
-    expect(screen.getByText("早餐")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "财富流动日志" })).toHaveTextContent(
+      "备注：早餐",
+    );
     expect(adapter.readWalletContainers).toHaveBeenCalledOnce();
     expect(adapter.readMoneyInflowSources).toHaveBeenCalledOnce();
     expect(adapter.readDailyExpensePool).toHaveBeenCalledOnce();
     expect(adapter.readDailyExpenseEntries).toHaveBeenCalledOnce();
+    expect(adapter.readWealthFlowEvents).toHaveBeenCalledOnce();
 
     await user.click(screen.getByRole("button", { name: "返回启动面板" }));
 

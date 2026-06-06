@@ -53,7 +53,7 @@ const dailyExpenseEntry = (
 });
 
 describe("DailyExpensePoolPanel", () => {
-  it("renders the top, middle, and bottom sections", () => {
+  it("renders the information and settlement sections without a visible expense stream", () => {
     render(
       <DailyExpensePoolPanel
         entries={[dailyExpenseEntry()]}
@@ -80,9 +80,9 @@ describe("DailyExpensePoolPanel", () => {
     expect(panel).toHaveTextContent("最近来源现金口袋");
     expect(panel).toHaveTextContent("消费结算");
     expect(panel).not.toHaveTextContent("余额不足时不能扣款。");
-    expect(panel).toHaveTextContent("消费流水");
+    expect(panel).not.toHaveTextContent("消费流水");
     expect(panel).not.toHaveTextContent("只保存在本机");
-    expect(panel).toHaveTextContent("早餐和交通");
+    expect(panel).not.toHaveTextContent("早餐和交通");
   });
 
   it("disables transfer when no wallet container exists", () => {
@@ -109,6 +109,7 @@ describe("DailyExpensePoolPanel", () => {
     const user = userEvent.setup();
     const onSavePool = vi.fn().mockResolvedValue(undefined);
     const onSaveWalletContainer = vi.fn().mockResolvedValue(undefined);
+    const onTransferCompleted = vi.fn().mockResolvedValue(undefined);
 
     render(
       <DailyExpensePoolPanel
@@ -117,6 +118,7 @@ describe("DailyExpensePoolPanel", () => {
         onSaveEntry={vi.fn()}
         onSavePool={onSavePool}
         onSaveWalletContainer={onSaveWalletContainer}
+        onTransferCompleted={onTransferCompleted}
         pool={dailyExpensePool({ balance: 300 })}
         walletContainers={[walletContainer({ balance: 1000 })]}
         now={now}
@@ -144,6 +146,23 @@ describe("DailyExpensePoolPanel", () => {
     expect(screen.getByRole("region", { name: "日常开销池" })).toHaveTextContent(
       "550",
     );
+    expect(onTransferCompleted).toHaveBeenCalledWith({
+      amount: 250,
+      pool: {
+        ...dailyExpensePool({ balance: 300 }),
+        balance: 550,
+        lastTransferAmount: 250,
+        lastTransferAt: "2026-06-03T10:30:00.000",
+        lastTransferWalletContainerId: "wallet-1",
+        lastTransferWalletContainerNameSnapshot: "现金口袋",
+        updatedAt: "2026-06-03T10:30:00.000",
+      },
+      sourceContainer: {
+        ...walletContainer({ balance: 1000 }),
+        balance: 750,
+        updatedAt: "2026-06-03T10:30:00.000",
+      },
+    });
   });
 
   it("keeps settlement usable when the selected transfer source is missing", async () => {
@@ -224,6 +243,7 @@ describe("DailyExpensePoolPanel", () => {
     const onSavePool = vi.fn().mockResolvedValue(undefined);
     const onSaveEntry = vi.fn().mockResolvedValue(undefined);
     const onSaveWalletContainer = vi.fn().mockResolvedValue(undefined);
+    const onExpenseCharged = vi.fn().mockResolvedValue(undefined);
 
     render(
       <DailyExpensePoolPanel
@@ -233,6 +253,7 @@ describe("DailyExpensePoolPanel", () => {
         onSaveEntry={onSaveEntry}
         onSavePool={onSavePool}
         onSaveWalletContainer={onSaveWalletContainer}
+        onExpenseCharged={onExpenseCharged}
         pool={dailyExpensePool({ balance: 300 })}
         walletContainers={[walletContainer()]}
         now={now}
@@ -257,36 +278,57 @@ describe("DailyExpensePoolPanel", () => {
       updatedAt: "2026-06-03T10:30:00.000",
     });
     expect(onSaveWalletContainer).not.toHaveBeenCalled();
+    expect(onExpenseCharged).toHaveBeenCalledWith({
+      entry: {
+        id: "expense-new",
+        amount: 68,
+        note: "早餐和交通",
+        spentAt: "2026-06-03T10:30:00.000",
+        createdAt: "2026-06-03T10:30:00.000",
+        updatedAt: "2026-06-03T10:30:00.000",
+      },
+      pool: {
+        ...dailyExpensePool({ balance: 300 }),
+        balance: 232,
+        updatedAt: "2026-06-03T10:30:00.000",
+      },
+    });
   });
 
-  it("deletes an expense entry and rolls the amount back into the pool", async () => {
-    const user = userEvent.setup();
-    const onSavePool = vi.fn().mockResolvedValue(undefined);
-    const onDeleteEntry = vi.fn().mockResolvedValue(undefined);
-    const onSaveWalletContainer = vi.fn().mockResolvedValue(undefined);
-
-    render(
+  it("refreshes the displayed balance when the parent pool changes", () => {
+    const { rerender } = render(
       <DailyExpensePoolPanel
-        entries={[dailyExpenseEntry({ id: "expense-delete", amount: 80 })]}
-        onDeleteEntry={onDeleteEntry}
+        entries={[]}
+        onDeleteEntry={vi.fn()}
         onSaveEntry={vi.fn()}
-        onSavePool={onSavePool}
-        onSaveWalletContainer={onSaveWalletContainer}
-        pool={dailyExpensePool({ balance: 120 })}
+        onSavePool={vi.fn()}
+        onSaveWalletContainer={vi.fn()}
+        pool={dailyExpensePool({ balance: 200 })}
         walletContainers={[walletContainer()]}
         now={now}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "删除消费流水早餐和交通" }));
+    expect(screen.getByRole("region", { name: "日常开销池" })).toHaveTextContent(
+      "当前余额 200",
+    );
 
-    expect(onSavePool).toHaveBeenCalledWith({
-      ...dailyExpensePool({ balance: 120 }),
-      balance: 200,
-      updatedAt: "2026-06-03T10:30:00.000",
-    });
-    expect(onDeleteEntry).toHaveBeenCalledWith("expense-delete");
-    expect(onSaveWalletContainer).not.toHaveBeenCalled();
+    rerender(
+      <DailyExpensePoolPanel
+        entries={[]}
+        onDeleteEntry={vi.fn()}
+        onSaveEntry={vi.fn()}
+        onSavePool={vi.fn()}
+        onSaveWalletContainer={vi.fn()}
+        pool={dailyExpensePool({ balance: 300 })}
+        walletContainers={[walletContainer()]}
+        now={now}
+      />,
+    );
+
+    expect(screen.getByRole("region", { name: "日常开销池" })).toHaveTextContent(
+      "当前余额 300",
+    );
   });
 
   it("does not render forbidden finance language", () => {

@@ -8,6 +8,7 @@ import type {
   OnboardingAnswerRecord,
   StartupScanProfile,
   WalletContainer,
+  WealthFlowEvent,
 } from "@/types/lifeos";
 
 export const LIFEOS_LOCAL_DATABASE_NAME = "lifeos-v1";
@@ -42,6 +43,8 @@ type StoredDailyExpensePool = DailyExpensePool;
 
 type StoredDailyExpenseEntry = DailyExpenseEntry;
 
+type StoredWealthFlowEvent = WealthFlowEvent;
+
 export type LifeOSLocalDataSnapshot = {
   onboardingAnswer: OnboardingAnswerRecord | null;
   startupScanProfile: StartupScanProfile | null;
@@ -66,6 +69,7 @@ export class LifeOSLocalDatabase extends Dexie {
   moneyInflowSources!: Table<StoredMoneyInflowSource, string>;
   dailyExpensePools!: Table<StoredDailyExpensePool, string>;
   dailyExpenseEntries!: Table<StoredDailyExpenseEntry, string>;
+  wealthFlowEvents!: Table<StoredWealthFlowEvent, string>;
 
   constructor(databaseName = LIFEOS_LOCAL_DATABASE_NAME) {
     super(databaseName);
@@ -114,6 +118,17 @@ export class LifeOSLocalDatabase extends Dexie {
       moneyInflowSources: "id, createdAt, updatedAt, targetWalletContainerId",
       dailyExpensePools: "id, createdAt, updatedAt",
       dailyExpenseEntries: "id, spentAt, createdAt, updatedAt",
+    });
+    this.version(8).stores({
+      onboardingAnswers: "id, updatedAt",
+      startupScanProfiles: "id, updatedAt",
+      ecosystemObservations: "id, observedAt, dimensionId, updatedAt",
+      energyObservations: "id, observedAt, dimensionId, updatedAt",
+      walletContainers: "id, createdAt, updatedAt",
+      moneyInflowSources: "id, createdAt, updatedAt, targetWalletContainerId",
+      dailyExpensePools: "id, createdAt, updatedAt",
+      dailyExpenseEntries: "id, spentAt, createdAt, updatedAt",
+      wealthFlowEvents: "id, type, occurredAt, createdAt, updatedAt",
     });
   }
 }
@@ -388,6 +403,54 @@ export const readDailyExpenseEntries = async (
   }));
 };
 
+export const saveWealthFlowEvent = async (
+  database: LifeOSLocalDatabase,
+  event: WealthFlowEvent,
+): Promise<void> => {
+  await database.wealthFlowEvents.put(event);
+};
+
+export const readWealthFlowEvents = async (
+  database: LifeOSLocalDatabase,
+): Promise<WealthFlowEvent[]> => {
+  const events = await database.wealthFlowEvents.orderBy("occurredAt").toArray();
+
+  return events
+    .map((event) => ({
+      id: event.id,
+      type: event.type,
+      direction: event.direction,
+      amount: event.amount,
+      occurredAt: event.occurredAt,
+      ...(event.source ? { source: event.source } : {}),
+      ...(event.target ? { target: event.target } : {}),
+      ...(event.relatedEventId
+        ? { relatedEventId: event.relatedEventId }
+        : {}),
+      ...(event.relatedDailyExpenseEntryId
+        ? { relatedDailyExpenseEntryId: event.relatedDailyExpenseEntryId }
+        : {}),
+      ...(event.note ? { note: event.note } : {}),
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+    }))
+    .sort((left, right) => {
+      const occurredComparison = right.occurredAt.localeCompare(left.occurredAt);
+
+      if (occurredComparison !== 0) {
+        return occurredComparison;
+      }
+
+      return right.createdAt.localeCompare(left.createdAt);
+    });
+};
+
+export const clearWealthFlowEvents = async (
+  database: LifeOSLocalDatabase,
+): Promise<void> => {
+  await database.wealthFlowEvents.clear();
+};
+
 export const readLifeOSLocalData = async (
   database: LifeOSLocalDatabase,
 ): Promise<LifeOSLocalDataSnapshot> => ({
@@ -409,6 +472,7 @@ export const clearLifeOSLocalData = async (
       database.moneyInflowSources,
       database.dailyExpensePools,
       database.dailyExpenseEntries,
+      database.wealthFlowEvents,
     ],
     async () => {
       await database.onboardingAnswers.clear();
@@ -419,6 +483,7 @@ export const clearLifeOSLocalData = async (
       await database.moneyInflowSources.clear();
       await database.dailyExpensePools.clear();
       await database.dailyExpenseEntries.clear();
+      await database.wealthFlowEvents.clear();
     },
   );
 };
